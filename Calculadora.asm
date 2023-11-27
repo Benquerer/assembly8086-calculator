@@ -1,4 +1,4 @@
-                            include 'emu8086.inc'
+include 'emu8086.inc'
 
 org 100h
 
@@ -299,74 +299,75 @@ continuar2:
     mov ah,09h
     int 21h
     
-    jmp criarDivisor
- 
-    
-criarDivisor:
-                    
-    xor cl, cl
-    
-    mov ch, 10      
-    mov al, [di]  ; Load the ASCII character from the array
-    cmp al, 0     ; Check if it's the null terminator    
-    je  carregaArr
-
-    sub al, '0'   ; Convert ASCII character to numeric value
-    imul ch       ; Multiply the current result in AH by 10
-    add dh, ah    ; Add the new numeric value to the result
-
-    inc di        ; Move to the next character in the array
-    jmp criarDivisor                
-    
-carregaArr:
-
-    mov di, 0
-    lea di,arrAux ;carrega o array  
-    jmp loopArr 
-    
-    xor ch, ch 
-                                    
-                                    
-loopArr:  
-    
-    mov divisor, dh
-    ADD dh, AUX
-    mov [di], dh
-    inc cl
-    CMP cl, tamanhoDivisor
-    je sair
-    jmp loopArr   
-    
-   
-sair:
-  
-    MOV al, [di]
-    MOV ah, [si]
-    CMP al, ah 
-    jae continua3
-    INC ch 
-    INC di
-    CMP ch, 10
-    je HOgrande
-    jmp sair
-    
-HOgrande:
-  
-    xor ch , ch
-    INC si 
-    jmp sair
-
-continua3:
- 
-    SUB ch , 1
-    CMP ch , '0'
+    jmp divisao
 
 divisao:
+    
+    ;DEBUG
+    
+    ;xor bx,bx
+    ;lea si,divisorarray
+    ;lea di,dividendoarray
+    ;call printDivs
+
     mov quociente , 0   ; Passa quociente para 0
     mov resto , 0       ; Passa resto para 0
     mov HO , 0          ; Passa HO para 0
 
     jmp ConstrAuxArr ; Salta para o verificardivaux
+
+;-------------------DEBUG DIVISAO--------------------
+
+printDivs:
+   xor ax,ax
+   mov al,[si]
+   
+   Call print_num_uns
+     
+   inc si
+   inc bl
+   
+   cmp bl, tamanhoDivisor
+   je pre
+   
+   jmp printDivs
+    
+pre:
+    xor bx,bx 
+    
+printDivd:
+   xor ax,ax
+   mov al,[di]
+   
+   Call print_num_uns
+   
+   inc di
+   inc bl
+   
+   cmp bl, tamanhoDividendo
+   je finalDiv
+   
+   jmp printDivd 
+
+PrintAuxArr:
+   xor ax,ax
+   mov al,[di]
+   
+   Call print_num_uns
+   
+   lea dx,enter        ;Faz um enter
+   mov ah,09h
+   int 21h
+   
+   inc di
+   inc bl
+   
+   cmp bl, countDiv
+   je finalDiv
+   
+   jmp PrintAuxArr
+
+;----------------------------------------------------
 
 ConstrAuxArr:
     mov al, countDiv ;Copia o valor do contador para o al
@@ -378,17 +379,25 @@ ConstrAuxArr:
     mov al, 10       ;Copia 10 para o al
 
     cmp countDiv, al    ;Verifica se o contador chegou ao 10
-    je iniciarDivisao  ;Caso tenha, salta para o iniciarDivisao
+    je PrintAuxArr      ;DEBUG
+    ;je iniciarDivisao   ;Caso tenha, salta para o iniciarDivisao
     
     inc countDiv     ;Incrementa o contador
-
-    jmp ConstrAuxArr ;Volta a correr o ConstrAuxArr
+    
+    xor bx,bx
+    lea di,auxArr 
+    jmp ConstrAuxArr 
+     
+    ;jmp ConstrAuxArr ;Volta a correr o ConstrAuxArr
+      
 
 iniciarDivisao:
-
-    
-    xor ah,ah            ; Imprime o valor do resto
-    mov al,HO 
+    lea si,[dividendoarray] ;inicializar si como o array do dividendo
+    mov al, [si]            ;passar o primeiro digito do array para ax
+              
+              
+    sub al, 48              ;passar al para decimal e armazenar em HO
+    mov HO, al                         
     Call print_num_uns
     
     jmp verificardivaux ;Salta para o verificardivaux
@@ -400,7 +409,8 @@ verificardivaux:
     jmp proximaIteracao
 
 proximaIteracao:
-
+    
+    ;Verifical qual e o maior valor do array auxArr menor que HO
 
     jmp verificardivaux
 
