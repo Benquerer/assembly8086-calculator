@@ -21,8 +21,8 @@ AUX db 0
 
 ;CC  
 askCC db "Introduza o CC : $" 
-msgInvalido db "O número que introduziu não é valido"
-msgValido db "O número que introduziu é valido"
+msgInvalido db "O numero que introduziu nao e valido"
+msgValido db "O numero que introduziu e valido"
 CCArr db 15 dup 0
 CCArrNovo db 15 dup 0
 soma dw 0
@@ -51,10 +51,25 @@ auxArr db 0 dup 10
 dividendoAux db 5 dup 0
 tamanhoaux db 0
 
+; NIF
+askNIF db "Insira o NIF : $"
+NIFArr db 9 dup 0
+tamanhoNIF db 0
+somaNIF dw 0
+
 ;Funcs gerais
 clearScreen:
     mov AX, 03h
     int 10h 
+    ret
+
+tabelaConversao:
+    ; Converta o caractere para um valor numérico usando a tabela de conversão
+    sub al, '0'   ; Subtrai o valor ASCII '0' para obter um número
+    sub al, 'A'   ; Subtrai o valor ASCII 'A' para letras maiúsculas
+
+    ; Agora AL contém o valor numérico correspondente ao caractere original
+    ; Faça o que for necessário com o valor, por exemplo, armazene em uma variável
     ret
 
 start:
@@ -708,14 +723,14 @@ checkDigit2div:
 
 invalido:
     call clearScreen
-    lea dx, msgInvalido     ;imprime a string msgErro
+    lea dx, msgInvalido     ;imprime a string msgInvalido
     mov ah, 09h
     int 21h
     jmp cc
 
 
 CCFim:
-    lea dx, msgValido     ;imprime a string msgErro
+    lea dx, msgValido     ;imprime a string msgValido
 
 
 
@@ -729,20 +744,122 @@ CCFim:
 
 nif:
     call clearScreen
-    ;mov dx, offset 
-    ;mov ah, 9
-    ;int 21h
-       
+    mov dx, offset askNIF
+    mov ah, 9
+    int 21h
+
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    xor si,si
+    xor di,di
+
+    lea si, NIFArr
+
+validarInput:
+    ; Recebendo a entrada do usuario
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado
+
+    cmp al,48            ;Se encontra 0
+    je check0na1posNIF     ;Da je para CHECK0na1pos1
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroNIF           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroNIF           ;Da jump para erro se for maior que 57
+    jmp lerNIF     ;Da jump para funcao lerNumerador
+    
+    
+lerNIF: 
+
+    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
+    inc cl  ; incrementa o tamanho do Dividendo
+    mov tamanhoNIF, cl  ;atualiza o tamanho do dividendo
+    inc si  ; incrementa o pointer do array para selecionar as posicoes
+    cmp cl,9 ; compara se o valor do Dividendo tem 5 algorismos, conta 0,1,2,3,4 
+    jne validarInput
+    xor cx,cx
+    mov somaNIF, 0
+    jmp validarNIF  
 
 
-tabelaConversao:
-    ; Converta o caractere para um valor numérico usando a tabela de conversão
-    sub al, '0'   ; Subtrai o valor ASCII '0' para obter um número
-    sub al, 'A'   ; Subtrai o valor ASCII 'A' para letras maiúsculas
+check0na1posNIF:
+    cmp tamanhoNIF, 0   ;compara o tamanho do dividendo com 0
+    je erroNIF                  ;se for igual a zero da erro
+    jmp lerNIF
 
-    ; Agora AL contém o valor numérico correspondente ao caractere original
-    ; Faça o que for necessário com o valor, por exemplo, armazene em uma variável
-    ret
+
+erroNIF:
+    pusha          
+    mov ah, 0x00  
+    mov al, 0x03        ;text mode 80x25 16 colours
+    int 0x10
+    popa
+    
+    lea dx, msgErro     ;imprime a string msgErro
+    mov ah, 09h
+    int 21h 
+      
+    lea dx,enter        ;Faz um enter
+    mov ah,09h
+    int 21h
+    sub cl,1
+    jmp validarInput
+
+validarNIF:
+    mov bx,9
+    mov si, cx
+    mov ax, [si]
+    mul bx
+    inc cx
+    dec bx
+    add somaNIF, ax
+    cmp cx, 9
+    je validarNIF2
+    jmp validarNIF
+
+validarNIF2:
+    xor dx,dx
+    xor bx,bx
+    mov onze, 11
+    mov bx, 11
+    mov ax, somaNIF
+    div bx
+    cmp dx, 0
+    je NIF0
+    jmp NIFdif0
+
+
+NIF0:
+    mov si, 9
+    cmp [si], 0
+    je NIFValido
+    jmp NIFInvalido
+
+NIFdif0:
+    mov si,9
+    sub dx, 11
+    cmp si, dx
+    je NIFValido
+    jmp NIFInvalido
+
+NIFInvalido:
+    xor ax,ax
+    xor dx,dx
+    call clearScreen
+    lea dx, msgInvalido     ;imprime a string msgInvalido
+    mov ah, 09h
+    int 21h
+    jmp NIF
+
+NIFValido:
+    xor ax,ax
+    xor dx,dx
+    lea dx, msgValido     ;imprime a string msgInvalido
+    mov ah, 09h
+    int 21h
+
 
 
 DEFINE_PRINT_NUM_UNS
