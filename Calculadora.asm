@@ -21,8 +21,9 @@ AUX db 0
 
 ; Adicao
 msgAsk1Parcela db "Digite a primeira parcela: $"
-msgAsk2Parcela db "Digite a segunda parcela: $"
-
+msgAsk2Parcela db "Digite a segunda parcela: $"  
+tamanhoParcela db 0 
+erroInser db "Digito invalido!"
 
 
 ; Divisao:
@@ -147,11 +148,58 @@ erro:
 
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
-    call clearScreen
-    xor ax,ax
-    xor bx,bx
-    xor cx,cx
-    xor dx,dx
+    call clearScreen  
+    mov dx, offset msgAsk1Parcela
+    mov ah, 09h
+    int 21h
+    jmp lerDigito
+    
+validarParcela:
+
+    ; Recebendo a entrada do usuario
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado
+
+    cmp al,13            ;Se encontra enter
+    je continuar         ;Da je para continuar
+    cmp al,48            ;Se encontra 0
+    je check0na1pos1     ;Da je para CHECK0na1pos1
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroDiv           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroDiv           ;Da jump para erro se for maior que 57
+    jmp lerDividendo     ;Da jump para funcao lerNumerador
+    
+    
+lerDigito:
+
+    ; Recebendo a entrada do usuario
+    mov ah, 01h
+    int 21h 
+    cmp al, 45       ;verificar se houve o imput de um -
+    je inseriuMenos
+    ;verificar o usuario terminou o input da parcela (enter)
+    cmp al, 13
+    je lerDigito 
+    ;verificar se o input esta entre 0 e 9 
+    cmp al,48
+    jb erroInsercao
+    cmp al,57
+    ja erroInsercao
+    jmp lerDigito
+ 
+    
+
+inseriuMenos: 
+    cmp tamanhoParcela, 0
+    jne erroInsercao
+    mov tamanhoParcela, 1
+    jmp lerDigito
+
+erroInsercao:
+    mov dx, offset erroInser
+    mov ah,09h
+    int 21h
 
 
 ;-------------------------------------------------------------------------------------------------------------------
