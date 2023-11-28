@@ -15,20 +15,15 @@ op4 db "Divisao inteira - d", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 op5 db "Raiz Quadrada - e", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 op6 db "Cartao de Cidadao - f", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 op7 db "NIF - g", 0x0D, 0x0A, 0x0D, 0x0A, "$"
-askEscolha db "Escolha a opcao que quer (a-g): $" 
+askEscolha db "Escolha a opcao que quer (a - g): $" 
 msgErro db "Parametro invalido$"
-AUX db 0   
+AUX db 0
 
-;CC  
-askCC db "Introduza o CC : $" 
-msgInvalido db "O numero que introduziu nao e valido"
-msgValido db "O numero que introduziu e valido"
-CCArr db 15 dup 0
-CCArrNovo db 15 dup 0
-soma dw 0
-onze db 0  
-dez dw 0
-tamanhoCC db 0
+; Adicao
+msgAsk1Parcela db "Digite a primeira parcela: $"
+msgAsk2Parcela db "Digite a segunda parcela: $"
+
+
 
 ; Divisao:
 msgtest db "TESTE: $"
@@ -51,26 +46,25 @@ auxArr db 0 dup 10
 dividendoAux db 5 dup 0
 tamanhoaux db 0
 
+;CC  
+askCC db "Introduza o CC : $" 
+msgInvalido db "O numero que introduziu nao e valido"
+msgValido db "O numero que introduziu e valido"
+CCArr db 15 dup 0
+CCArrNovo db 15 dup 0
+soma dw 0
+onze db 0  
+dez dw 0
+tamanhoCC db 0
+
 ; NIF
 askNIF db "Insira o NIF : $"
 NIFArr db 9 dup 0
 tamanhoNIF db 0
 somaNIF dw 0
 
-;Funcs gerais
-clearScreen:
-    mov AX, 03h
-    int 10h 
-    ret
 
-tabelaConversao:
-    ; Converta o caractere para um valor numérico usando a tabela de conversão
-    sub al, '0'   ; Subtrai o valor ASCII '0' para obter um número
-    sub al, 'A'   ; Subtrai o valor ASCII 'A' para letras maiúsculas
 
-    ; Agora AL contém o valor numérico correspondente ao caractere original
-    ; Faça o que for necessário com o valor, por exemplo, armazene em uma variável
-    ret
 
 start:
     mov dx, offset op1
@@ -154,6 +148,12 @@ erro:
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
     call clearScreen
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+
+
 ;-------------------------------------------------------------------------------------------------------------------
 Subt:
     call clearScreen
@@ -737,6 +737,9 @@ CCFim:
 
 
 
+
+
+
 ;-------------------------------------------------------------------------------------------------------------------
 
 nif:
@@ -834,10 +837,14 @@ NIF0:
     je NIFValido
     jmp NIFInvalido
 
-NIFdif0:
-    mov si,9
-    sub dx, 11
-    cmp si, dx
+NIFdif0:   
+    xor ax,ax
+    mov ax,11
+    mov si,8
+    sub ax, dx
+    mov dx, ax
+    mov ax, [si]
+    cmp [si], dx
     je NIFValido
     jmp NIFInvalido
 
@@ -848,6 +855,7 @@ NIFInvalido:
     lea dx, msgInvalido     ;imprime a string msgInvalido
     mov ah, 09h
     int 21h
+    ;call clearScreen
     jmp NIF
 
 NIFValido:
@@ -861,7 +869,21 @@ NIFValido:
 
 DEFINE_PRINT_NUM_UNS
 
+tabelaConversao:
+    ; Converta o caractere para um valor numérico usando a tabela de conversão
+    sub al, '0'   ; Subtrai o valor ASCII '0' para obter um número
+    sub al, 'A'   ; Subtrai o valor ASCII 'A' para letras maiúsculas
+
+    ; Agora AL contém o valor numérico correspondente ao caractere original
+    ; Faça o que for necessário com o valor, por exemplo, armazene em uma variável
+    ret  
+    
+;Funcs gerais
+clearScreen:
+    mov AX, 03h
+    int 10h 
+    ret
+
 int 20h ; Terminar o programa
        
 end start 
-
