@@ -21,9 +21,8 @@ AUX db 0
 
 ; Adicao
 msgAsk1Parcela db "Digite a primeira parcela: $"
-msgAsk2Parcela db "Digite a segunda parcela: $"  
-tamanhoParcela db 0 
-erroInser db "Digito invalido!"
+msgAsk2Parcela db "Digite a segunda parcela: $"
+
 
 
 ; Divisao:
@@ -51,7 +50,7 @@ tamanhoaux db 0
 askCC db "Introduza o CC : $" 
 msgInvalido db "O numero que introduziu nao e valido"
 msgValido db "O numero que introduziu e valido"
-CCArr db 15 dup 0
+CCArr db 15 dup (0)
 CCArrNovo db 15 dup 0
 soma dw 0
 onze db 0  
@@ -60,7 +59,7 @@ tamanhoCC db 0
 
 ; NIF
 askNIF db "Insira o NIF : $"
-NIFArr db 9 dup 0
+NIFArr db 9 dup (0)
 tamanhoNIF db 0
 somaNIF dw 0
 
@@ -80,10 +79,26 @@ start:
 
     mov dx, offset op4
     int 21h
-
+    
+    ;mov cx,ax
+    mov ah,00
+    int 16h
+    mov ah, 09h           
+    
+    
     mov dx, offset op5
     int 21h
-
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
     mov dx, offset op6
     int 21h
 
@@ -96,6 +111,9 @@ start:
                                      
       
 validacaoNum:  
+                
+                
+                
                                      
     ; Recebendo a entrada do usuario
     mov ah, 00h      ; Servio para receber um caractere do teclado
@@ -148,58 +166,11 @@ erro:
 
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
-    call clearScreen  
-    mov dx, offset msgAsk1Parcela
-    mov ah, 09h
-    int 21h
-    jmp lerDigito
-    
-validarParcela:
-
-    ; Recebendo a entrada do usuario
-    mov ah, 01h      ; Servico para receber um caractere do teclado
-    int 21h          ; Captura o caractere digitado
-
-    cmp al,13            ;Se encontra enter
-    je continuar         ;Da je para continuar
-    cmp al,48            ;Se encontra 0
-    je check0na1pos1     ;Da je para CHECK0na1pos1
-    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroDiv           ;da jump para erro se for menor que 49
-    cmp al,57            
-    ja erroDiv           ;Da jump para erro se for maior que 57
-    jmp lerDividendo     ;Da jump para funcao lerNumerador
-    
-    
-lerDigito:
-
-    ; Recebendo a entrada do usuario
-    mov ah, 01h
-    int 21h 
-    cmp al, 45       ;verificar se houve o imput de um -
-    je inseriuMenos
-    ;verificar o usuario terminou o input da parcela (enter)
-    cmp al, 13
-    je lerDigito 
-    ;verificar se o input esta entre 0 e 9 
-    cmp al,48
-    jb erroInsercao
-    cmp al,57
-    ja erroInsercao
-    jmp lerDigito
- 
-    
-
-inseriuMenos: 
-    cmp tamanhoParcela, 0
-    jne erroInsercao
-    mov tamanhoParcela, 1
-    jmp lerDigito
-
-erroInsercao:
-    mov dx, offset erroInser
-    mov ah,09h
-    int 21h
+    call clearScreen
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
 
 
 ;-------------------------------------------------------------------------------------------------------------------
@@ -591,11 +562,10 @@ lerCC:
     ret
       
 teste:    
-    mov soma, 0   
-    mov cx, soma
+    mov soma, 0
     xor cx,cx 
     xor dx,dx 
-    xor ah,ah 
+    xor ax,ax 
 
 checkDigit1:  
     dec bx                  ;bl começa a 10 e e decrementado ate 2
@@ -610,15 +580,16 @@ checkDigit1:
     jmp checkDigit1
 
 checkDigit1div:
-    xor ah,ah
-    xor al,al
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
     int 21h          ; Captura o caractere digitado
-    xor ah,ah
-    mov onze, 11
-    mov ax, soma
-    div onze
+    mov cl,al
+    mov ax, soma 
+    mov bx, 11
+    div bx
     cmp dx,0
     je checkDigit1igual0
     sub dx,11
@@ -627,13 +598,13 @@ checkDigit1div:
 checkDigit1igual0:
 
     ;DIGITO IGUAL A 0
-    cmp al,0
+    cmp cl,0
     je versao
     jmp errado
 
 checkDigit1dif0:
 
-    cmp ax,dx
+    cmp cx,dx
     je versao
     jmp errado
 
@@ -694,7 +665,8 @@ checkDigit2:
     jb erroCD2           ;da jump para erro se for menor que 49
     cmp al,57            
     ja erroCD2         ;Da jump para erro se for maior que 57
-    call lerCC
+    call lerCC  
+    mov bx, 2
     jmp checkDigit2calc
 
 erroCD2:
@@ -716,13 +688,11 @@ erroCD2:
 
 
 checkDigit2calc:
-    inc cx
+    inc cx 
+    mov bx, 2
     mov si, cx
     mov ax, [si]
-    mov bx, 2
-    mul bx    
-    mov Dez,10
-    cmp ax,Dez
+    mul bx      
     mov [di], ax
     cmp cx, 12
     je resetValores
@@ -740,7 +710,8 @@ reconstruirArr:             ;Reconstroi o array para os numeros impares
     mov di, cx
     mov ax, [di]
     cmp ax, 10
-    jg maiorque10
+    jge maiorque10
+    add soma, ax
     mov [si], ax
     inc cx
     inc cx
@@ -756,15 +727,16 @@ maiorque10:
     inc cx
     inc cx
     cmp cx, 12
-    je checkDigit2calc
+    je checkDigit2div
     jmp reconstruirArr
 
 
-checkDigit2div:
+checkDigit2div: 
+    mov ax, soma
     xor dx,dx
     xor bx,bx 
-    mov bx,Dez
-    div soma, bx
+    mov bx, 10
+    div bx
     cmp dx, 0
     je CCFim
     jmp invalido
@@ -820,7 +792,7 @@ validarInput:
     
     
 lerNIF: 
-
+    sub al,48
     mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
     inc cl  ; incrementa o tamanho do Dividendo
     mov tamanhoNIF, cl  ;atualiza o tamanho do dividendo
@@ -854,18 +826,33 @@ erroNIF:
     int 21h
     sub cl,1
     jmp validarInput
-
+          
+          
+          
 validarNIF:
+
+    mov dx,ax
+    mov ah,00h
+    int 16h
+    mov ax,dx
+
     mov bx,9
+   validarNIF_new: 
     mov si, cx
     mov ax, [si]
     mul bx
     inc cx
     dec bx
-    add somaNIF, ax
+    add somaNIF, ax 
+    
+    mov dx,ax
+    mov ah,00h
+    int 16h
+    mov ax,dx
+    
     cmp cx, 9
     je validarNIF2
-    jmp validarNIF
+    jmp validarNIF_new
 
 validarNIF2:
     xor dx,dx
