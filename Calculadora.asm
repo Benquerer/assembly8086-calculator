@@ -17,18 +17,13 @@ op6 db "Cartao de Cidadao - f", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 op7 db "NIF - g", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 askEscolha db "Escolha a opcao que quer (a - g): $" 
 msgErro db "Parametro invalido$"
-AUX db 0   
+AUX db 0
 
-;CC  
-askCC db "Introduza o CC : $" 
-msgInvalido db "O numero que introduziu nao e valido"
-msgValido db "O numero que introduziu e valido"
-CCArr db 15 dup 0
-CCArrNovo db 15 dup 0
-soma dw 0
-onze db 0  
-dez dw 0
-tamanhoCC db 0
+; Adicao
+msgAsk1Parcela db "Digite a primeira parcela: $"
+msgAsk2Parcela db "Digite a segunda parcela: $"
+
+
 
 ; Divisao:
 msgtest db "TESTE: $"
@@ -50,6 +45,17 @@ aux1 db 0
 auxArr db 0 dup 10
 dividendoAux db 5 dup 0
 tamanhoaux db 0
+
+;CC  
+askCC db "Introduza o CC : $" 
+msgInvalido db "O numero que introduziu nao e valido"
+msgValido db "O numero que introduziu e valido"
+CCArr db 15 dup 0
+CCArrNovo db 15 dup 0
+soma dw 0
+onze db 0  
+dez dw 0
+tamanhoCC db 0
 
 ; NIF
 askNIF db "Insira o NIF : $"
@@ -154,6 +160,12 @@ erro:
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
     call clearScreen
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+
+
 ;-------------------------------------------------------------------------------------------------------------------
 Subt:
     call clearScreen
