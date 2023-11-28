@@ -15,7 +15,7 @@ op4 db "Divisao inteira - d", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 op5 db "Raiz Quadrada - e", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 op6 db "Cartao de Cidadao - f", 0x0D, 0x0A, 0x0D, 0x0A, "$"
 op7 db "NIF - g", 0x0D, 0x0A, 0x0D, 0x0A, "$"
-askEscolha db "Escolha a opcao que quer (a-e): $" 
+askEscolha db "Escolha a opcao que quer (a - g): $" 
 msgErro db "Parametro invalido$"
 AUX db 0   
 
