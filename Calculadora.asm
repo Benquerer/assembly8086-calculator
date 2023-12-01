@@ -347,8 +347,12 @@ divisao:
     mov quociente , 0   ; Passa quociente para 0
     mov resto , 0       ; Passa resto para 0
     mov HO , 0          ; Passa HO para 0
-
+    
+    ;passar divisorarray para um numero so (divisor)
+    xor bx,bx
+    mov bl , 1
     jmp ConstrAuxArr ; Salta para o verificardivaux
+    
 
 ;-------------------DEBUG DIVISAO--------------------
 
@@ -383,6 +387,11 @@ printDivd:
    
    jmp printDivd 
 
+pre2:
+    xor bx,bx
+    
+    jmp PrintAuxArr
+
 PrintAuxArr:
    xor ax,ax
    mov al,[di]
@@ -404,25 +413,25 @@ PrintAuxArr:
 ;----------------------------------------------------
 
 ConstrAuxArr:
+    xor ah,ah
     mov al, countDiv ;Copia o valor do contador para o al
-    mul divisor      ;Multiplica o divisor pelo al(contador) e armazena o valor em ax
-
+            
     lea si, auxArr   ;Copia o auxArr para o array
-    mov [si] , ax    ;Copia o resultado da multiplicacao para o array
+    mov [si] , bx    ;Copia o resultado da multiplicacao para o array
 
     mov al, 10       ;Copia 10 para o al
+    
+    ;NESTE MOMENTO PARA DEBUG ESTA A SIMULAR DIVISOR = 1
+    add bl,bl      ;Multiplica o o valor do divisor | suposto usar algoritmo soma andre
 
     cmp countDiv, al    ;Verifica se o contador chegou ao 10
     je PrintAuxArr      ;DEBUG
+    
     ;je iniciarDivisao   ;Caso tenha, salta para o iniciarDivisao
     
-    inc countDiv     ;Incrementa o contador
-    
-    xor bx,bx
-    lea di,auxArr 
-    jmp ConstrAuxArr 
+    inc countDiv     ;Incrementa o contador 
      
-    ;jmp ConstrAuxArr ;Volta a correr o ConstrAuxArr
+    jmp ConstrAuxArr ;Volta a correr o ConstrAuxArr
       
 
 iniciarDivisao:
