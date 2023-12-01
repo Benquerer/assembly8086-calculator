@@ -1,4 +1,4 @@
-include 'emu8086.inc'
+                             include 'emu8086.inc'
 
 org 100h
 
@@ -32,8 +32,8 @@ askDivisor db "Escolha o divisor: $"
 msgQuociente db "Quociente: $"
 msgResto db "Resto: $"
 divisor db 0
-divisorarray db 5 dup 0
-dividendoarray db 5 dup 0
+divisorarray db 5 dup (0)
+dividendoarray db 5 dup (0)
 arrAux db 5 dup 0
 tamanhoDividendo db 0
 tamanhoDivisor db 0
@@ -42,16 +42,16 @@ resto db 0
 HO db 0
 countDiv db 0
 aux1 db 0
-auxArr db 0 dup 10
-dividendoAux db 5 dup 0
+auxArr db 10 dup (0)
+dividendoAux db 5 dup (0)
 tamanhoaux db 0
 
 ;CC  
 askCC db "Introduza o CC : $" 
 msgInvalido db "O numero que introduziu nao e valido"
 msgValido db "O numero que introduziu e valido"
-CCArr db 15 dup (0)
-CCArrNovo db 15 dup 0
+CCArr db 12 dup (0)
+CCArrNovo db 12 dup (0)
 soma dw 0
 onze db 0  
 dez dw 0
@@ -511,14 +511,16 @@ raiz:
 cc:
     call clearScreen     
     xor cl,cl
-    xor di,di
-    mov CCArr, 0
+    xor di,di  
+    
+    mov CCArr, 0    
+    mov tamanhoCC, 0
 
     mov dx, offset askCC
     mov ah, 9
     int 21h
     xor si, si
-    lea si, CCArr ;carrega o array
+    mov si, offset CCArr ;carrega o array
  
 
 validarCC1Parte:
@@ -560,11 +562,13 @@ erroCC:
     jmp validarCC1Parte
 
 check0na1pos1CC:
-    cmp CCArr, 0   ;compara o tamanho do dividendo com 0
+    cmp tamanhoCC, 0   ;compara o tamanho do dividendo com 0
     je erroCC                 ;se for igual a zero da erro
+    call lerCC  
     jmp validarCC1Parte
 
-lerCC:
+lerCC:  
+    sub al,48
     mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
     add tamanhoCC, 1  ;atualiza o tamanho do dividendo
     inc si  ; incrementa o pointer do array para selecionar as posicoes
@@ -580,7 +584,7 @@ checkDigit1:
     dec bx                  ;bl começa a 10 e e decrementado ate 2
     mov si, cx              ;posiçao do array igual a do ch
     mov ax, bx              ;move o bl para o ax para multiplicar
-    mov dx, [si]            ;move o algarismo na posiçao do si para o dl
+    add dx, [si]            ;move o algarismo na posiçao do si para o dl
     mul dx                  ;multiplica ax por dl
     add soma, ax                    ;adiciona o resultado da mul com a soma
     inc cx                  ;ch começa a 0 ate 8
@@ -846,7 +850,7 @@ validarNIF:
     mov ax,dx
 
     mov bx,9
-   validarNIF_new: 
+validarNIF_new: 
     mov si, cx
     mov ax, [si]
     mul bx
