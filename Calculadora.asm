@@ -60,7 +60,7 @@ CCArrNovo db 12 dup (0)
 soma dw 0
 onze db 0  
 dez dw 0
-tamanhoCC db 0
+tamanhoCC dw 0
 
 ; NIF
 askNIF db "Insira o NIF : $"
@@ -601,9 +601,9 @@ cc:
 
     mov dx, offset askCC
     mov ah, 9
-    int 21h
-    xor si, si
-    mov si, offset CCArr ;carrega o array
+    int 21h 
+    
+
  
 
 validarCC1Parte:
@@ -657,23 +657,27 @@ lerCC:
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     ret
       
-teste:    
+teste:     
+    xor si, si
+    lea si, CCArr ;carrega o array
     mov soma, 0
     xor cx,cx 
     xor dx,dx 
     xor ax,ax 
 
-checkDigit1:  
-    dec bx                  ;bl começa a 10 e e decrementado ate 2
-    mov si, cx              ;posiçao do array igual a do ch
-    mov ax, bx              ;move o bl para o ax para multiplicar
-    add dx, [si]            ;move o algarismo na posiçao do si para o dl
-    mul dx                  ;multiplica ax por dl
+checkDigit1: 
+    xor ax,ax 
+    dec bl                 ;bl começa a 10 e e decrementado ate 2
+    mov si, cx             ;posiçao do array igual a do ch
+    mov al, bl              ;move o bl para o ax para multiplicar
+    mov dl, [si]            ;move o algarismo na posiçao do si para o dl
+    mul dl                  ;multiplica ax por dl
     add soma, ax                    ;adiciona o resultado da mul com a soma
     inc cx                  ;ch começa a 0 ate 8
-    cmp bx, 2               ;compara bl com 2
-    je checkDigit1div:  
+    cmp bl, 2               ;compara bl com 2
+    je checkDigit1div  
     jmp checkDigit1
+    
 
 checkDigit1div:
     xor ax,ax
@@ -681,14 +685,19 @@ checkDigit1div:
     xor cx,cx
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
-    int 21h          ; Captura o caractere digitado
+    int 21h          ; Captura o caractere digitado 
+    cmp al, 48
+    jb checkDigit1div
+    cmp al, 57
+    ja checkDigit1div
+    call lerCC
     mov cl,al
     mov ax, soma 
-    mov bx, 11
-    div bx
-    cmp dx,0
+    mov bl, 11
+    div bl
+    cmp ah,0
     je checkDigit1igual0
-    sub dx,11
+    sub bl,ah
     jmp checkDigit1dif0
 
 checkDigit1igual0:
@@ -700,7 +709,7 @@ checkDigit1igual0:
 
 checkDigit1dif0:
 
-    cmp cx,dx
+    cmp cl,bl
     je versao
     jmp errado
 
@@ -713,26 +722,23 @@ errado:
     jmp cc
 
 versao:
+    mov si, tamanhoCC  
+    mov cx, tamanhoCC
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
     int 21h          ; Captura o caractere digitado
-
-    cmp al,'A'            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jl errover           ;da jump para erro se for menor que 49
-    cmp al,'z'           
-    jg errover         ;Da jump para erro se for maior que 57
-    cmp al, 49
-    jb errover
-    cmp al,57
-    ja errover
-    call tabelaConversao
-    call lerCC
-    xor cl,cl
-    xor ax,ax
-    xor bx,bx
-    xor di, di
-    lea di, CCArrNovo  ;carrega o array
-    jmp checkDigit2
+    cmp cx, 10
+    je checkDigit2
+            
+    cmp al, 48
+    jb errover 
+    cmp al,90           
+    jg errover         ;Da jump para erro se for maior que 57       
+    cmp al,57            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jl versaoNumeros           ;da jump para erro se for menor que 49
+    cmp al,65
+    ja versaoLetras
+    jmp errover
 
 errover:
     pusha          
@@ -749,6 +755,18 @@ errover:
     mov ah,09h
     int 21h
     sub cl,1
+    jmp versao  
+    
+ 
+versaoNumeros:
+    mov si, tamanhoCC
+    call lerCC
+    jmp versao 
+    
+versaoLetras:
+    sub al, 7
+    mov si, tamanhoCC
+    call lerCC   
     jmp versao
 
 
@@ -762,7 +780,12 @@ checkDigit2:
     cmp al,57            
     ja erroCD2         ;Da jump para erro se for maior que 57
     call lerCC  
-    mov bx, 2
+    xor cx,cx
+    xor ax,ax
+    xor bx,bx
+    xor dx,dx 
+    mov soma,0
+    
     jmp checkDigit2calc
 
 erroCD2:
@@ -803,6 +826,7 @@ resetValores:
 
 
 reconstruirArr:             ;Reconstroi o array para os numeros impares
+    mov ax, ax
     mov di, cx
     mov ax, [di]
     cmp ax, 10
@@ -811,7 +835,7 @@ reconstruirArr:             ;Reconstroi o array para os numeros impares
     mov [si], ax
     inc cx
     inc cx
-    cmp cx, 12
+    cmp cx, 13
     je checkDigit2div
     jmp reconstruirArr
 
@@ -822,7 +846,7 @@ maiorque10:
     mov [si], ax
     inc cx
     inc cx
-    cmp cx, 12
+    cmp cx, 13
     je checkDigit2div
     jmp reconstruirArr
 
@@ -833,7 +857,7 @@ checkDigit2div:
     xor bx,bx 
     mov bx, 10
     div bx
-    cmp dx, 0
+    cmp ah, 0 ;COMPARA COM O CD2
     je CCFim
     jmp invalido
 
