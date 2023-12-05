@@ -1,4 +1,4 @@
-                             include 'emu8086.inc'
+                                                            include 'emu8086.inc'
 
 org 100h
 
@@ -21,12 +21,7 @@ AUX db 0
 
 ; Adicao
 msgAsk1Parcela db "Digite a primeira parcela: $"
-msgAsk2Parcela db "Digite a segunda parcela: $" 
-parc1Array db 5 dup(0) 
-parc2Array db 5 dup(0)
-tamanhoParc1 db ?
-result db 0 
-
+msgAsk2Parcela db "Digite a segunda parcela: $"
 
 
 
@@ -83,27 +78,11 @@ start:
     int 21h
 
     mov dx, offset op4
-    int 21h
-    
-    ;mov cx,ax
-    mov ah,00
-    int 16h
-    mov ah, 09h           
-    
+    int 21h       
     
     mov dx, offset op5
     int 21h
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                             
+                                                     
     mov dx, offset op6
     int 21h
 
@@ -172,88 +151,10 @@ erro:
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
     call clearScreen
-    xor cl,cl 
-    call clearScreen
-    mov dx, offset msgAsk1Parcela   
-    mov ah, 09h     
-    int 21h         
-    xor si, si
-    lea si,parc1Array ;carrega o array 
-    
-
-validAlgParc1:
-    mov ah,01h
-    int 21h    
-    
-    cmp al,13            ;Se encontra enter
-    je continuarAdd         ;Da je para continuarAdd
-    cmp al,45            ;Se encontra -
-    je checkMinus     ;Da je para checkMinus 
-    cmp al,47            ;Se encontra 0
-    je check0add     ;Da je para check0add
-    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroAdd           ;da jump para erro se for menor que 49
-    cmp al,57            
-    ja erroAdd           ;Da jump para erro se for maior que 57
-    jmp lerParc1     ;Da jump para funcao lerParc
-    
-validAlgParc2:
-    mov ah,01h
-    int 21h    
-    
-    cmp al,13            ;Se encontra enter
-    je inicSoma         ;Da je para continuarAdd
-    cmp al,45            ;Se encontra -
-    je checkMinus     ;Da je para checkMinus 
-    cmp al,47            ;Se encontra 0
-    je check0add     ;Da je para check0add
-    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroAdd           ;da jump para erro se for menor que 49
-    cmp al,57            
-    ja erroAdd           ;Da jump para erro se for maior que 57
-    jmp lerParc2     ;Da jump para funcao lerParc  
-    
-lerParc1:
-    sub al,48
-    mov [si],al
-    inc si
-    inc cl
-    mov tamanhoParc1, cl
-    cmp cl,4
-    ja continuarAdd
-    jmp validAlgParc1 
-
-lerParc2:
-    sub al,48
-    mov [di],al  
-    inc di
-    inc cl
-    mov tamanhoParc1, cl
-    cmp cl,4
-    ja inicSoma
-    jmp validAlgParc2
-    
-continuarAdd: 
-    xor cl,cl
-    lea dx,enter      ;faz um enter    
-    mov ah,09h
-    int 21h                              
-    lea dx,enter      ;faz outro enter    
-    mov ah,09h
-    int 21h
-    xor ax,ax           
-    mov dx, offset msgAsk2Parcela   
-    mov ah, 09h     
-    int 21h         
-    xor di, di
-    lea di,parc2Array ;carrega o array
-    jmp validAlgParc2
-    
-checkMinus:
-check0add:
-erroAdd:
-inicSoma:  
-somaLoop:
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
 
 
 ;-------------------------------------------------------------------------------------------------------------------
@@ -721,14 +622,14 @@ errado:
     int 21h
     jmp cc
 
-versao:
+versao:      
     mov si, tamanhoCC  
     mov cx, tamanhoCC
+    cmp cx, 11
+    je checkDigit2
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
     int 21h          ; Captura o caractere digitado
-    cmp cx, 10
-    je checkDigit2
             
     cmp al, 48
     jb errover 
@@ -806,14 +707,17 @@ erroCD2:
     jmp checkDigit2:
 
 
-checkDigit2calc:
-    inc cx 
+checkDigit2calc:           ;Multiplicar o array inteiro por 2
+    xor ax, ax
     mov bx, 2
-    mov si, cx
+    mov si, cx  
+    mov di, cx
     mov ax, [si]
-    mul bx      
+    mul bx   
+    xor ah, ah   
     mov [di], ax
-    cmp cx, 12
+    inc cx
+    cmp cx, 12  
     je resetValores
     jmp checkDigit2calc
 
@@ -825,8 +729,9 @@ resetValores:
     mov cx, 1
 
 
+
 reconstruirArr:             ;Reconstroi o array para os numeros impares
-    mov ax, ax
+    xor ax, ax
     mov di, cx
     mov ax, [di]
     cmp ax, 10
@@ -857,7 +762,7 @@ checkDigit2div:
     xor bx,bx 
     mov bx, 10
     div bx
-    cmp ah, 0 ;COMPARA COM O CD2
+    cmp dx, 0
     je CCFim
     jmp invalido
 
@@ -895,7 +800,6 @@ nif:
     xor si,si
     xor di,di
 
-    lea si, NIFArr
 
 validarInput:
     ; Recebendo a entrada do usuario
