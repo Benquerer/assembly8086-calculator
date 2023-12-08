@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
                                                             include 'emu8086.inc'
+=======
+include 'emu8086.inc'
+>>>>>>> Stashed changes
 
 org 100h
 
