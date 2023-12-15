@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-                                                            include 'emu8086.inc'
-=======
 include 'emu8086.inc'
->>>>>>> Stashed changes
 
 org 100h
 
@@ -56,10 +52,11 @@ msgInvalido db "O numero que introduziu nao e valido"
 msgValido db "O numero que introduziu e valido"
 CCArr db 12 dup (0)
 CCArrNovo db 12 dup (0)
-soma dw 0
+soma dw 0  
+soma2 dw 0
 onze db 0  
 dez dw 0
-tamanhoCC dw 0
+tamanhoCC db 0
 
 ; NIF
 askNIF db "Insira o NIF : $"
@@ -70,7 +67,10 @@ somaNIF dw 0
 
 
 
-start:
+start:    
+    call clearScreen
+
+
     mov dx, offset op1
     mov ah, 9
     int 21h
@@ -501,20 +501,19 @@ cc:
     xor cl,cl
     xor di,di  
     
-    mov CCArr, 0    
     mov tamanhoCC, 0
 
     mov dx, offset askCC
     mov ah, 9
-    int 21h 
+    int 21h   
     
 
  
 
 validarCC1Parte:
-    CMP cl, 8
+    mov cl, tamanhoCC
+    cmp cl, 8
     je teste
-    INC cl          ;Incrementar cl até chegar a 8
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
     int 21h          ; Captura o caractere digitado
@@ -555,12 +554,38 @@ check0na1pos1CC:
     call lerCC  
     jmp validarCC1Parte
 
-lerCC:  
+lerCC: 
+    xor dx,dx
+    xor cx,cx
+    xor ah,ah 
     sub al,48
     mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
     add tamanhoCC, 1  ;atualiza o tamanho do dividendo
     inc si  ; incrementa o pointer do array para selecionar as posicoes
+    mov dl, al
+    mov cl, 2
+    mov al, tamanhoCC
+    div cl
+    cmp ah, 1
+    je soma2calc
+    add soma2, dx
+    ret      
+    
+soma2calc:
+    
+    mov al, dl
+    mul cl 
+    cmp ax, 10
+    ja maiorque10
+    add soma2, ax 
+    ret    
+    
+maiorque10:
+    sub ax, 9
+    add soma2, ax
     ret
+    
+    
       
 teste:     
     xor si, si
@@ -594,9 +619,11 @@ checkDigit1div:
     cmp al, 48
     jb checkDigit1div
     cmp al, 57
-    ja checkDigit1div
+    ja checkDigit1div   
+    mov bl,al  
+    sub bl,48 
     call lerCC
-    mov cl,al
+    mov cl, bl
     mov ax, soma 
     mov bl, 11
     div bl
@@ -626,9 +653,9 @@ errado:
     int 21h
     jmp cc
 
-versao:      
-    mov si, tamanhoCC  
-    mov cx, tamanhoCC
+versao: 
+    mov cl, tamanhoCC     
+    mov si, cx  
     cmp cx, 11
     je checkDigit2
     ; Recebendo a entrada do usuario
@@ -663,14 +690,16 @@ errover:
     jmp versao  
     
  
-versaoNumeros:
-    mov si, tamanhoCC
+versaoNumeros:   
+    mov cl, tamanhoCC
+    mov si, cx
     call lerCC
     jmp versao 
     
 versaoLetras:
-    sub al, 7
-    mov si, tamanhoCC
+    sub al, 7  
+    mov cl, tamanhoCC
+    mov si, cx
     call lerCC   
     jmp versao
 
@@ -685,13 +714,9 @@ checkDigit2:
     cmp al,57            
     ja erroCD2         ;Da jump para erro se for maior que 57
     call lerCC  
-    xor cx,cx
-    xor ax,ax
-    xor bx,bx
-    xor dx,dx 
-    mov soma,0
     
-    jmp checkDigit2calc
+    ;jmp checkDigit2calc  
+    jmp checkDigit2div
 
 erroCD2:
     pusha          
@@ -711,62 +736,15 @@ erroCD2:
     jmp checkDigit2:
 
 
-checkDigit2calc:           ;Multiplicar o array inteiro por 2
-    xor ax, ax
-    mov bx, 2
-    mov si, cx  
-    mov di, cx
-    mov ax, [si]
-    mul bx   
-    xor ah, ah   
-    mov [di], ax
-    inc cx
-    cmp cx, 12  
-    je resetValores
-    jmp checkDigit2calc
-
-
-
-resetValores:
-    xor cx,cx
-    xor ax,ax
-    mov cx, 1
-
-
-
-reconstruirArr:             ;Reconstroi o array para os numeros impares
-    xor ax, ax
-    mov di, cx
-    mov ax, [di]
-    cmp ax, 10
-    jge maiorque10
-    add soma, ax
-    mov [si], ax
-    inc cx
-    inc cx
-    cmp cx, 13
-    je checkDigit2div
-    jmp reconstruirArr
-
-
-maiorque10:
-    sub ax, 9
-    add soma, ax
-    mov [si], ax
-    inc cx
-    inc cx
-    cmp cx, 13
-    je checkDigit2div
-    jmp reconstruirArr
-
-
-checkDigit2div: 
-    mov ax, soma
+checkDigit2div:
+    xor cx, cx
+    mov cl, dl 
+    mov ax, soma2
     xor dx,dx
     xor bx,bx 
     mov bx, 10
     div bx
-    cmp dx, 0
+    cmp dx,0
     je CCFim
     jmp invalido
 
@@ -778,16 +756,17 @@ invalido:
     jmp cc
 
 
-CCFim:
-    lea dx, msgValido     ;imprime a string msgValido
-
-
-
-
-
-
-
-
+CCFim:          
+    xor dx,dx
+    lea dx, msgValido     ;imprime a string msgValido   
+    mov ah, 09h
+    int 21h    
+    xor ax,ax
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado 
+    jmp start
+    
+    
 
 ;-------------------------------------------------------------------------------------------------------------------
 
@@ -805,7 +784,9 @@ nif:
     xor di,di
 
 
-validarInput:
+validarInput:  
+    mov cl, tamanhoNIF
+    je validarNIF
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
     int 21h          ; Captura o caractere digitado
@@ -816,7 +797,8 @@ validarInput:
     jb erroNIF           ;da jump para erro se for menor que 49
     cmp al,57            
     ja erroNIF           ;Da jump para erro se for maior que 57
-    jmp lerNIF     ;Da jump para funcao lerNumerador
+    call lerNIF     ;Da jump para funcao lerNumerador 
+    jmp validarInput
     
     
 lerNIF: 
@@ -826,10 +808,7 @@ lerNIF:
     mov tamanhoNIF, cl  ;atualiza o tamanho do dividendo
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     cmp cl,9 ; compara se o valor do Dividendo tem 5 algorismos, conta 0,1,2,3,4 
-    jne validarInput
-    xor cx,cx
-    mov somaNIF, 0
-    jmp validarNIF  
+    ret
 
 
 check0na1posNIF:
@@ -932,15 +911,7 @@ NIFValido:
 
 DEFINE_PRINT_NUM_UNS
 
-tabelaConversao:
-    ; Converta o caractere para um valor numérico usando a tabela de conversão
-    sub al, '0'   ; Subtrai o valor ASCII '0' para obter um número
-    sub al, 'A'   ; Subtrai o valor ASCII 'A' para letras maiúsculas
 
-    ; Agora AL contém o valor numérico correspondente ao caractere original
-    ; Faça o que for necessário com o valor, por exemplo, armazene em uma variável
-    ret  
-    
 ;Funcs gerais
 clearScreen:
     mov AX, 03h
