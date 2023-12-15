@@ -785,7 +785,8 @@ nif:
 
 
 validarInput:  
-    mov cl, tamanhoNIF
+    mov cl, tamanhoNIF 
+    cmp cl,9
     je validarNIF
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
@@ -814,7 +815,8 @@ lerNIF:
 check0na1posNIF:
     cmp tamanhoNIF, 0   ;compara o tamanho do dividendo com 0
     je erroNIF                  ;se for igual a zero da erro
-    jmp lerNIF
+    call lerNIF
+    jmp validarInput
 
 
 erroNIF:
@@ -841,30 +843,27 @@ validarNIF:
     mov dx,ax
     mov ah,00h
     int 16h
-    mov ax,dx
+    mov ax,dx 
+    xor cx,cx 
+    xor ax,ax
 
     mov bx,9
 validarNIF_new: 
     mov si, cx
     mov ax, [si]
+    xor ah,ah
     mul bx
     inc cx
-    dec bx
+    dec bx   
     add somaNIF, ax 
     
-    mov dx,ax
-    mov ah,00h
-    int 16h
-    mov ax,dx
-    
-    cmp cx, 9
+    cmp cx, 8
     je validarNIF2
     jmp validarNIF_new
 
 validarNIF2:
     xor dx,dx
     xor bx,bx
-    mov onze, 11
     mov bx, 11
     mov ax, somaNIF
     div bx
@@ -874,7 +873,7 @@ validarNIF2:
 
 
 NIF0:
-    mov si, 9
+    mov si, 8 
     cmp [si], 0
     je NIFValido
     jmp NIFInvalido
@@ -884,20 +883,20 @@ NIFdif0:
     mov ax,11
     mov si,8
     sub ax, dx
-    mov dx, ax
-    mov ax, [si]
-    cmp [si], dx
+    mov dx, [si]   
+    xor dh, dh
+    cmp ax, dx
     je NIFValido
     jmp NIFInvalido
 
 NIFInvalido:
     xor ax,ax
     xor dx,dx
-    call clearScreen
     lea dx, msgInvalido     ;imprime a string msgInvalido
     mov ah, 09h
     int 21h
-    ;call clearScreen
+    mov ah,00h
+    int 16h
     jmp NIF
 
 NIFValido:
@@ -905,7 +904,11 @@ NIFValido:
     xor dx,dx
     lea dx, msgValido     ;imprime a string msgInvalido
     mov ah, 09h
-    int 21h
+    int 21h 
+    xor ax,ax
+    mov ah,00h
+    int 16h 
+    jmp start
 
 
 
