@@ -1,4 +1,4 @@
-include 'emu8086.inc'
+                                           include 'emu8086.inc'
 
 org 100h
 
@@ -399,6 +399,22 @@ PrintAuxArr:
    jmp PrintAuxArr
 
 ;----------------------------------------------------
+ConstrDiv:
+    cmp si, tamanhoDivisor    ;Verifica se ja precorreu todos os elementos do divisor
+    ja ConstrAuxArr           ;Caso sim, constroi o array auxiliar
+   
+    lea si, divisorarray
+    mov bx, [si]
+    
+    mov al, 10
+    mul bx, al
+    
+    inc si
+    
+    add divisor, al
+    
+    jmp ConstrDiv
+
 
 ConstrAuxArr:
     xor ah,ah
@@ -414,7 +430,6 @@ ConstrAuxArr:
 
     cmp countDiv, al    ;Verifica se o contador chegou ao 10
     je PrintAuxArr      ;DEBUG
-    
     ;je iniciarDivisao   ;Caso tenha, salta para o iniciarDivisao
     
     inc countDiv     ;Incrementa o contador 
@@ -434,7 +449,7 @@ iniciarDivisao:
     jmp verificardivaux ;Salta para o verificardivaux
 
 verificardivaux:
-    cmp tamanhoaux , 48 ; Verifica se o dividendoAux esta vazio
+    cmp tamanhoaux , 48 ; Verifica se o dividendoAux esta vazio compara com "0"
     je finalDiv         ; Caso esteja salta para o finalDiv
 
     jmp proximaIteracao
@@ -770,18 +785,17 @@ CCFim:
 
 ;-------------------------------------------------------------------------------------------------------------------
 
-nif:
-    call clearScreen
-    mov dx, offset askNIF
-    mov ah, 9
-    int 21h
-
+nif:       
     xor ax,ax
     xor bx,bx
     xor cx,cx
     xor dx,dx
     xor si,si
     xor di,di
+    call clearScreen
+    mov dx, offset askNIF
+    mov ah, 9
+    int 21h
 
 
 validarInput:  
@@ -907,7 +921,10 @@ NIFValido:
     int 21h 
     xor ax,ax
     mov ah,00h
-    int 16h 
+    int 16h
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx 
     jmp start
 
 
