@@ -1,4 +1,5 @@
-                                           include 'emu8086.inc'
+
+                                                                                                            include 'emu8086.inc'
 
 org 100h
 
@@ -31,7 +32,7 @@ askDividendo db "Escolha o dividendo: $"
 askDivisor db "Escolha o divisor: $"
 msgQuociente db "Quociente: $"
 msgResto db "Resto: $"
-divisor db 0
+divisor dw 0
 divisorarray db 5 dup (0)
 dividendoarray db 5 dup (0)
 arrAux db 5 dup 0
@@ -192,7 +193,7 @@ divInteira:
     mov ah, 09h     ; Funcao para imprimir string
     int 21h         ; Chamar a interrupcao do DOS para imprimir
     xor si, si
-    lea si,dividendoarray ;carrega o array
+    
    
              
 
@@ -214,7 +215,7 @@ validarDividendo:
     
     
 lerDividendo: 
-
+    sub al, 48
     mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
     inc cl  ; incrementa o tamanho do Dividendo
     mov tamanhoDividendo, cl  ;atualiza o tamanho do dividendo
@@ -281,7 +282,7 @@ validarDivisor:
 
 
 lerDivisor:   
-
+    sub al, 48
     mov [di],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
     inc cl  ; incrementa o tamanho do numerador
     mov tamanhoDivisor, cl   ;atualiza o tamanho do divisor
@@ -339,82 +340,35 @@ divisao:
     ;passar divisorarray para um numero so (divisor)
     xor bx,bx
     mov bl , 1
-    jmp ConstrAuxArr ; Salta para o verificardivaux
+    mov ax , 1
+    mul tamanhoDivisor 
+    mov si, ax
+    sub si,1
+    xor cx,cx
+    xor ax,ax
+    mov cx, 1
+    jmp ConstrDiv ; Salta para o verificardivaux
     
-
-;-------------------DEBUG DIVISAO--------------------
-
-printDivs:
-   xor ax,ax
-   mov al,[si]
-   
-   Call print_num_uns
-     
-   inc si
-   inc bl
-   
-   cmp bl, tamanhoDivisor
-   je pre
-   
-   jmp printDivs
+ConstrDiv:             
+         
+    mov bl, [si]              ;Copia o elemento na posicao si do array para bx
     
-pre:
-    xor bx,bx 
+    mov ax, cx                ;Multiplica o digito pela respetiva potencia de base 10
+    mul bx                     
+                               
+    add divisor, ax            ;Adiciona ao divisor o resultado
+                               
+    mov bx, 10                 ;Multiplica a ultima potencia base 10 por 10
+    mov ax, cx
+    mul bx
+    mov cx, ax
     
-printDivd:
-   xor ax,ax
-   mov al,[di]
-   
-   Call print_num_uns
-   
-   inc di
-   inc bl
-   
-   cmp bl, tamanhoDividendo
-   je finalDiv
-   
-   jmp printDivd 
-
-pre2:
-    xor bx,bx
+    cmp si,0            ;Verifica se ja precorreu todos os elementos do divisor
+    je ConstrAuxArr           ;Caso sim, constroi o array auxiliar
     
-    jmp PrintAuxArr
-
-PrintAuxArr:
-   xor ax,ax
-   mov al,[di]
-   
-   Call print_num_uns
-   
-   lea dx,enter        ;Faz um enter
-   mov ah,09h
-   int 21h
-   
-   inc di
-   inc bl
-   
-   cmp bl, countDiv
-   je finalDiv
-   
-   jmp PrintAuxArr
-
-;----------------------------------------------------
-ConstrDiv:
-    cmp si, tamanhoDivisor    ;Verifica se ja precorreu todos os elementos do divisor
-    ja ConstrAuxArr           ;Caso sim, constroi o array auxiliar
-   
-    lea si, divisorarray
-    mov bx, [si]
-    
-    mov al, 10
-    mul bx, al
-    
-    inc si
-    
-    add divisor, al
-    
+    dec si
+                           
     jmp ConstrDiv
-
 
 ConstrAuxArr:
     xor ah,ah
@@ -429,8 +383,7 @@ ConstrAuxArr:
     add bl,bl      ;Multiplica o o valor do divisor | suposto usar algoritmo soma andre
 
     cmp countDiv, al    ;Verifica se o contador chegou ao 10
-    je PrintAuxArr      ;DEBUG
-    ;je iniciarDivisao   ;Caso tenha, salta para o iniciarDivisao
+    je iniciarDivisao   ;Caso tenha, salta para o iniciarDivisao
     
     inc countDiv     ;Incrementa o contador 
      
