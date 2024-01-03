@@ -22,7 +22,11 @@ AUX db 0
 
 ; Adicao
 msgAsk1Parcela db "Digite a primeira parcela: $"
-msgAsk2Parcela db "Digite a segunda parcela: $"
+msgAsk2Parcela db "Digite a segunda parcela: $" 
+parc1Array db 5 dup(0) 
+parc2Array db 5 dup(0)
+tamanhoParc1 db ?
+result db 0
 
 
 
@@ -156,10 +160,87 @@ erro:
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
     call clearScreen
-    xor ax,ax
-    xor bx,bx
-    xor cx,cx
-    xor dx,dx
+    xor cl,cl 
+    mov dx, offset msgAsk1Parcela   
+    mov ah, 09h     
+    int 21h         
+    xor si, si
+    lea si,parc1Array ;carrega o array 
+    
+
+validAlgParc1:
+    mov ah,01h
+    int 21h    
+    
+    cmp al,13            ;Se encontra enter
+    je continuarAdd         ;Da je para continuarAdd
+    cmp al,45            ;Se encontra -
+    je checkMinus     ;Da je para checkMinus 
+    cmp al,47            ;Se encontra 0
+    je check0add     ;Da je para check0add
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroAdd           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroAdd           ;Da jump para erro se for maior que 57
+    jmp lerParc1     ;Da jump para funcao lerParc
+    
+validAlgParc2:
+    mov ah,01h
+    int 21h    
+    
+    cmp al,13            ;Se encontra enter
+    je inicSoma         ;Da je para continuarAdd
+    cmp al,45            ;Se encontra -
+    je checkMinus     ;Da je para checkMinus 
+    cmp al,47            ;Se encontra 0
+    je check0add     ;Da je para check0add
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroAdd           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroAdd           ;Da jump para erro se for maior que 57
+    jmp lerParc2     ;Da jump para funcao lerParc  
+    
+lerParc1:
+    sub al,48
+    mov [si],al
+    inc si
+    inc cl
+    mov tamanhoParc1, cl
+    cmp cl,4
+    ja continuarAdd
+    jmp validAlgParc1 
+
+lerParc2:
+    sub al,48
+    mov [di],al  
+    inc di
+    inc cl
+    mov tamanhoParc1, cl
+    cmp cl,4
+    ja inicSoma
+    jmp validAlgParc2
+    
+continuarAdd: 
+    xor cl,cl
+    lea dx,enter      ;faz um enter    
+    mov ah,09h
+    int 21h                              
+    lea dx,enter      ;faz outro enter    
+    mov ah,09h
+    int 21h
+    xor ax,ax           
+    mov dx, offset msgAsk2Parcela   
+    mov ah, 09h     
+    int 21h         
+    xor di, di
+    lea di,parc2Array ;carrega o array
+    jmp validAlgParc2
+    
+checkMinus:
+check0add:
+erroAdd:
+inicSoma:  
+somaLoop:
 
 
 ;-------------------------------------------------------------------------------------------------------------------
