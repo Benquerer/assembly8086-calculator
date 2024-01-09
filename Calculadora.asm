@@ -50,7 +50,15 @@ aux1 db 0
 auxArr db 10 dup (0)
 dividendoAux db 5 dup (0)
 tamanhoaux db 0
-
+                        
+;Raiz
+askRaiz db "Introduza um valor: $"  
+arrRaiz db 10 dup (0)   
+flagVirgula db 0 
+tamanhoRaizInteiro db 0     
+tamanhoRaizReal db 0
+                  
+                        
 ;CC  
 askCC db "Introduza o CC : $" 
 msgInvalido db "O numero que introduziu nao e valido"
@@ -537,18 +545,95 @@ finalDiv:
 
 
 raiz:   
-    call clearScreen
+    call clearScreen   
+    
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    xor si,si
+    xor di,di   
+    
+    mov tamanhoRaizInteiro, 0
+    mov tamanhoRaizReal, 0
+    
+    mov dx, offset askRaiz
+    mov ah, 9
+    int 21h    
+    
+    validarRaiz:
 
-    ;mov dx, offset 
-    ;mov ah, 9
-    ;int 21h
+    ; Recebendo a entrada do usuario
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado
+
+    cmp al,13            ;Se encontra enter
+    je continuar         ;Da je para continuar
+    cmp al,48            ;Se encontra 0
+    je check0na1pos1     ;Da je para CHECK0na1pos1 
+    cmp al,44            ;Se encontra 0
+    je virgula           ;Da je para virgula
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroDiv           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroDiv           ;Da jump para erro se for maior que 57  
+    cmp flagVirgula,1
+    je  lerRaizReal
+    jmp lerRaizInteiro    ;Da jump para funcao lerNumerador      
+    
+    
+lerRaizInteiro:   
+    sub al, 48
+    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
+    inc cl  ; incrementa o tamanho do numerador
+    mov tamanhoRaizInteiro, cl   ;atualiza o tamanho do divisor
+    inc si  ; incrementa o pointer do array para selecionar as posicoes
+    jmp validarRaiz   
+    
+    
+lerRaizReal:   
+    sub al, 48
+    mov [di],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
+    inc ch  ; incrementa o tamanho do numerador
+    mov tamanhoRaizReal, ch   ;atualiza o tamanho do divisor
+    inc di  ; incrementa o pointer do array para selecionar as posicoes
+    jmp validarRaiz   
+    
+    
+virgula:
+    cmp flagVirgula, 1
+    je erroRaiz
+    mov flagVirgula, 1
+    jmp validarRaiz  
+    
+    
+erroRaiz:
+    pusha          
+    mov ah, 0x00  
+    mov al, 0x03        ;text mode 80x25 16 colours
+    int 0x10
+    popa
+    
+    lea dx, msgErro     ;imprime a string msgErro
+    mov ah, 09h
+    int 21h 
+      
+    lea dx,enter        ;Faz um enter
+    mov ah,09h
+    int 21h
+    jmp raiz 
+    
 
 ;-------------------------------------------------------------------------------------------------------------------
 
 cc:
     call clearScreen     
-    xor cl,cl
-    xor di,di  
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    xor si,si
+    xor di,di
     
     mov tamanhoCC, 0
 
@@ -595,7 +680,7 @@ erroCC:
     mov ah,09h
     int 21h
     sub cl,1
-    jmp validarCC1Parte
+    jmp cc
 
 check0na1pos1CC:
     cmp tamanhoCC, 0   ;compara o tamanho do dividendo com 0
@@ -700,6 +785,8 @@ errado:
     lea dx, msgInvalido     ;imprime a string msgErro
     mov ah, 09h
     int 21h
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado 
     jmp cc
 
 versao: 
@@ -716,9 +803,9 @@ versao:
     cmp al,90           
     jg errover         ;Da jump para erro se for maior que 57       
     cmp al,57            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jl versaoNumeros           ;da jump para erro se for menor que 49
+    jbe versaoNumeros           ;da jump para erro se for menor que 49
     cmp al,65
-    ja versaoLetras
+    jae versaoLetras
     jmp errover
 
 errover:
@@ -736,7 +823,7 @@ errover:
     mov ah,09h
     int 21h
     sub cl,1
-    jmp versao  
+    jmp cc  
     
  
 versaoNumeros:   
@@ -782,7 +869,7 @@ erroCD2:
     mov ah,09h
     int 21h
     sub cl,1
-    jmp checkDigit2:
+    jmp cc
 
 
 checkDigit2div:
@@ -801,7 +888,9 @@ invalido:
     call clearScreen
     lea dx, msgInvalido     ;imprime a string msgInvalido
     mov ah, 09h
-    int 21h
+    int 21h 
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado 
     jmp cc
 
 
