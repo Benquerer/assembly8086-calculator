@@ -1,4 +1,4 @@
-
+                              
                                                                                                             include 'emu8086.inc'
 
 org 100h
@@ -47,7 +47,7 @@ resto db 0
 HO db 0
 countDiv db 0
 aux1 db 0
-auxArr db 10 dup (0)
+auxArr dw 10 dup (0)        ;Esta merda nao funciona, tou farto dessa porcaria 
 dividendoAux db 5 dup (0)
 tamanhoaux db 0
                         
@@ -430,9 +430,9 @@ divisao:
     xor bx,bx
     mov bl , 1
     mov ax , 1
-    mul tamanhoDivisor 
+    mul tamanhoDividendo 
     mov si, ax
-    sub si,1
+    sub si,1      ;si comeca no lenght do dividendo - 1
     xor cx,cx
     xor ax,ax
     mov cx, 1
@@ -453,30 +453,34 @@ ConstrDiv:
     mov cx, ax
     
     cmp si,0            ;Verifica se ja precorreu todos os elementos do divisor
-    je ConstrAuxArr           ;Caso sim, constroi o array auxiliar
+    je PreConstrAuxArr           ;Caso sim, constroi o array auxiliar
     
     dec si
                            
     jmp ConstrDiv
+    
+PreConstrAuxArr:        ;preparar registos para construir array auxiliar
+    lea si, auxArr
+    inc si
+    mov bx, divisor
+    mov [si] , bx
+    inc si
+    mov bx, divisor
+    
+
+    jmp ConstrAuxArr
 
 ConstrAuxArr:
-    xor ah,ah
-    mov al, countDiv ;Copia o valor do contador para o al
-            
-    lea si, auxArr   ;Copia o auxArr para o array
-    mov [si] , bx    ;Copia o resultado da multiplicacao para o array
 
-    mov al, 10       ;Copia 10 para o al
+    add bx,bx           ;Multiplica o o valor do divisor
+    mov [si] , bx       ;Copia o resultado da multiplicacao para o array
     
-    ;NESTE MOMENTO PARA DEBUG ESTA A SIMULAR DIVISOR = 1
-    add bl,bl      ;Multiplica o o valor do divisor | suposto usar algoritmo soma andre
-
-    cmp countDiv, al    ;Verifica se o contador chegou ao 10
+    cmp si, 10          ;Verifica se o contador chegou ao 10
     je iniciarDivisao   ;Caso tenha, salta para o iniciarDivisao
     
-    inc countDiv     ;Incrementa o contador 
+    inc si              ;Incrementa o contador 
      
-    jmp ConstrAuxArr ;Volta a correr o ConstrAuxArr
+    jmp ConstrAuxArr    ;Volta a correr o ConstrAuxArr
       
 
 iniciarDivisao:
