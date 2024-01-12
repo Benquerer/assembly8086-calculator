@@ -1,5 +1,5 @@
-                                                                                            
-                                                                                                            include 'emu8086.inc'
+
+include 'emu8086.inc'
 
 org 100h
 
@@ -2473,4 +2473,4 @@ clearScreen:
 
 int 20h ; Terminar o programa
        
-end start 
+end start
