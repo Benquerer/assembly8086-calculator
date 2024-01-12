@@ -1,4 +1,4 @@
-                              
+                                                                           
                                                                                                             include 'emu8086.inc'
 
 org 100h
@@ -52,8 +52,12 @@ dividendoAux db 5 dup (0)
 tamanhoaux db 0
                         
 ;Raiz
-askRaiz db "Introduza um valor: $"  
-arrRaiz db 10 dup (0)   
+askRaiz db "Introduza um valor: $" 
+resultRaiz db "Resultado: $"
+msgVirgula db ",$" 
+arrRaiz db 10 dup (0)
+raizReal dw 0
+resultReal dw 0   
 flagVirgula db 0 
 tamanhoRaizInteiro dw 0     
 tamanhoRaizReal dw 0  
@@ -62,7 +66,9 @@ resultadoRaiz dw 0
 maiorPot dw 0 
 currentPar dw 0
 raizAux dw 0 
-raizCalc dw 0
+raizCalc dw 0 
+lstResultadoRaiz dw 0
+tamanhoResultReal dw 0
                   
                         
 ;CC  
@@ -580,7 +586,7 @@ raiz:
     cmp al,13            ;Se encontra enter
     je checkNumAlg         ;Da je para continuar
     cmp al,48            ;Se encontra 0
-    je check0na1pos1     ;Da je para CHECK0na1pos1 
+    je check0na1pos1Raiz     ;Da je para CHECK0na1pos1 
     cmp al,44            ;Se encontra 0
     je virgula           ;Da je para virgula
     cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
@@ -603,17 +609,32 @@ lerRaizInteiro:
     
 lerRaizReal:   
     sub al, 48
-    mov [di],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    inc ch  ; incrementa o tamanho do numerador
+    mul bl
+    xor ah,ah
+    add raizReal,ax
+    inc cl  ; incrementa o tamanho do numerador
     mov tamanhoRaizReal, cx   ;atualiza o tamanho do divisor
     inc di  ; incrementa o pointer do array para selecionar as posicoes
+    sub bl, 9
+    cmp tamanhoRaizReal,2
+    je checkNumAlg
     jmp validarRaiz   
-    
+      
+      
+
+check0na1pos1Raiz:
+    cmp tamanhoRaizInteiro, 0   ;compara o tamanho do dividendo com 0
+    je erroRaiz                  ;se for igual a zero da erro
+    jmp lerRaizInteiro
+
+
     
 virgula:
     cmp flagVirgula, 1
     je erroRaiz
     mov flagVirgula, 1
+    xor cx,cx 
+    mov bl, 10
     jmp validarRaiz  
     
     
@@ -640,8 +661,8 @@ checkNumAlg:
     xor ax,ax
     mov ax,tamanhoRaizInteiro
     mov bx,2
-    div bx
-    cmp dx,1
+    div bl
+    cmp ah,1
     je resets 
     jmp resets2   
     
@@ -654,9 +675,9 @@ construirArrImpar:
     xor cx,cx
     mov cx,tamanhoRaizInteiro 
     xor bx,bx
-    mov bx,[si]
+    mov bl,[si]
     xor bh,bh
-    mov [si],ax 
+    mov [si],al 
     mov ax,bx   
     cmp si, cx
     je resets2  
@@ -674,7 +695,7 @@ resets2:
 raizCalculoInteiroP1: 
    
     
-    call getParAlg
+    call getParAlgInteiro
     xor ax,ax
     xor cx,cx
     mov cl,1
@@ -684,6 +705,8 @@ raizCalculoInteiroP1:
     mov ax, 100
     mul bx 
     mov raizAux, ax
+    cmp tamanhoRaizInteiro,2
+    jbe raizCalculoReal
     jmp raizCalculoInteiroP2    
     
     
@@ -693,32 +716,33 @@ raizCalculoInteiroP2:
     mov ax, 2
     mul dx
     cmp ax, tamanhoRaizInteiro
-    ja raizCalculoReal
-    call getParAlg
+    jae resets3
+    call getParAlgInteiro
     mov ax,raizAux
     add ax, currentPar
     mov raizAux, ax 
     mov cx, 1
-    call getRaizCalc
+    call getRaizCalcInteiro
     mov ax,raizAux
     sub ax, raizCalc
+    mov bx,100
+    mul bx
     mov raizAux,ax
+    jmp raizCalculoInteiroP2
                
 
     
     
-getParAlg:
+getParAlgInteiro:
     mov ax, currentParNum
     mov bx,2
     mul bx
     mov si,ax
-    mov ax,[si]
-    xor ah,ah
+    mov al,[si]
     mov bx,10
     mul bx
     inc si
-    mov bx,[si]
-    xor bh,bh
+    mov bl,[si]
     add ax,bx
     mov bx, currentParNum
     inc bx
@@ -733,42 +757,171 @@ getMaiorPot:
     mul cx   
     inc cx
     cmp ax,currentPar
-    jb getMaiorPot
+    jbe getMaiorPot
     sub cx,2
     mov resultadoRaiz, cx
+    mov lstResultadoRaiz, cx
+    add tamanhoResultReal,1
     mov ax,cx
     mul ax
     mov maiorPot, ax
     ret 
            
            
-getRaizCalc:
+getRaizCalcInteiro:
     mov ax,2
     mul resultadoRaiz 
     mov bx,10
     mul bx
     mov raizCalc,ax 
-    call getRaizCalc2
+    call getRaizCalcInteiro2
+    mov lstResultadoRaiz,cx
+    add tamanhoResultReal,1
+    mov ax,10
+    mul resultadoRaiz
+    add ax, lstResultadoRaiz
+    mov resultadoRaiz,ax
     ret  
              
 
-getRaizCalc2:
-    add raizCalc,cx
+getRaizCalcInteiro2:
+    add raizCalc,1
     mov ax,raizCalc
-    mul cx
-    cmp raizAux,ax
+    mul cx  
     inc cx
-    jb getRaizCalc2
-    dec cx
-    add raizCalc,cx
+    cmp ax,raizAux
+    jbe getRaizCalcInteiro2
+    sub cx,2
+    sub raizCalc,1
     mov ax,raizCalc
     mul cx
     mov raizCalc,ax
-    ret
+    ret  
+           
+           
+resets3:
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx 
             
+    
             
 raizCalculoReal:
+    cmp raizAux,0
+    je endRaiz
+    mov ax,raizAux
+    add ax, raizReal
+    mov raizAux, ax 
+    mov cx, 1
+    call getRaizCalcReal
+    jmp endRaiz
     
+        
+        
+getRaizCalcReal:
+    mov ax,2
+    mul resultadoRaiz 
+    mov bx,10
+    mul bx
+    mov raizCalc,ax 
+    call getRaizCalcReal2 
+    ret  
+             
+
+getRaizCalcReal2:
+    add raizCalc,1
+    mov ax,raizCalc
+    mul cx  
+    inc cx
+    cmp ax,raizAux
+    jbe getRaizCalcReal2
+    sub cx,2
+    sub raizCalc,1
+    mov resultReal,cx
+    ret
+    
+ 
+endRaiz:
+    call clearScreen   
+    
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    xor si,si
+    xor di,di
+    
+    
+       
+    
+    mov dx, offset resultRaiz 
+    mov ah, 9
+    int 21h  
+    
+    sub tamanhoResultReal,1   
+    mov cx, tamanhoResultReal
+    mov ax,1
+    call converte_e_mostra ; Chamar a função para converter e mostrar o número
+    
+    
+    mov dx, offset msgVirgula
+    mov ah, 9
+    int 21h
+    
+    
+    mov ax,resultReal
+    xor ah,ah
+    add al, '0'        ; Converter o resto para caractere ASCII
+    mov ah, 14
+    int 10h            ; Chamar interrupção do DOS
+    
+    
+    
+    
+    
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h
+    
+    jmp start 
+    
+    
+converte_e_mostra:
+    mov dx,1
+    cmp tamanhoResultReal,0
+    je converte_loop
+    ; Converte o valor em AX para uma string e a mostra diretamente
+    mov bx,10
+    mul bx
+    mov dx,ax
+    inc ch
+    cmp ch,cl
+    je converte_loop
+    jmp converte_e_mostra 
+    
+    
+converte_loop:
+    mov ax,resultadoRaiz
+    div dl
+    add al, '0'        ; Converter o resto para caractere ASCII
+    ; Mostrar o caractere diretamente
+    mov ah, 14
+    int 10h            ; Chamar interrupção do DOS
+    xor ah,ah
+    sub al,48
+    sub tamanhoResultReal,1
+    mov cx, tamanhoResultReal
+    mul dl 
+    sub resultadoRaiz,ax
+    mov ax,1 
+    cmp tamanhoResultReal,65535
+    je back
+    cmp tamanhoResultReal,0
+    jae converte_e_mostra
+    
+    
+back:
+    ret  
 
 ;-------------------------------------------------------------------------------------------------------------------
 
@@ -856,7 +1009,7 @@ soma2calc:
     mov al, dl
     mul cl 
     cmp ax, 10
-    ja maiorque10
+    jae maiorque10
     add soma2, ax 
     ret    
     
@@ -908,6 +1061,8 @@ checkDigit1div:
     mov bl, 11
     div bl
     cmp ah,0
+    je checkDigit1igual0
+    cmp ah,1
     je checkDigit1igual0
     sub bl,ah
     jmp checkDigit1dif0
