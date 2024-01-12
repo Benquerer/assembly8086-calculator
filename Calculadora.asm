@@ -21,12 +21,24 @@ msgErro db "Parametro invalido$"
 AUX db 0
 
 ; Adicao
-msgAsk1Parcela db "Digite a primeira parcela: $"
-msgAsk2Parcela db "Digite a segunda parcela: $" 
-parc1Array db 5 dup (0) 
-parc2Array db 5 dup (0)
-tamanhoParc1 db ?
-result db 0
+;tamanho das parcelas
+tamanhoSoma db 0  
+tamanhoParc1 db 0
+tamanhoParc2 db 0
+limitadorSoma db 10
+;sinais de cada parc
+primeiraNegSoma db 0 
+segundaNegSoma db 0
+;parcelas e resultado
+parc1 db 10 dup(0)
+parc2 db 10 dup(0)  
+resultadoSoma db 11 dup(0)
+;msgs
+msgParc1 db "Digite a primeira parcela: $"
+msgParc2 db "Digite a segunda parcela: $"
+msgResSoma db "Soma dos numeros: $" 
+msgErroSoma db "Digito invalido! Carregue qualquer tecla para sair... $" 
+msgErroNegSoma db "Posicao do '-' invalida Carregue qualquer tecla para sair... $"
 
 
 
@@ -179,90 +191,201 @@ erro:
 
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
-    call clearScreen
-    xor cl,cl 
-    mov dx, offset msgAsk1Parcela   
-    mov ah, 09h     
-    int 21h         
-    xor si, si
-    lea si,parc1Array ;carrega o array 
-    
 
-validAlgParc1:
-    mov ah,01h
-    int 21h    
-    
-    cmp al,13            ;Se encontra enter
-    je continuarAdd         ;Da je para continuarAdd
-    cmp al,45            ;Se encontra -
-    je checkMinus     ;Da je para checkMinus 
-    cmp al,47            ;Se encontra 0
-    je check0add     ;Da je para check0add
-    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroAdd           ;da jump para erro se for menor que 49
-    cmp al,57            
-    ja erroAdd           ;Da jump para erro se for maior que 57
-    jmp lerParc1     ;Da jump para funcao lerParc
-    
-validAlgParc2:
-    mov ah,01h
-    int 21h    
-    
-    cmp al,13            ;Se encontra enter
-    je inicSoma         ;Da je para continuarAdd
-    cmp al,45            ;Se encontra -
-    je checkMinus     ;Da je para checkMinus 
-    cmp al,47            ;Se encontra 0
-    je check0add     ;Da je para check0add
-    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroAdd           ;da jump para erro se for menor que 49
-    cmp al,57            
-    ja erroAdd           ;Da jump para erro se for maior que 57
-    jmp lerParc2     ;Da jump para funcao lerParc  
-    
-lerParc1:
-    sub al,48
-    mov [si],al
-    inc si
-    inc cl
-    mov tamanhoParc1, cl
-    cmp cl,4
-    ja continuarAdd
-    jmp validAlgParc1 
-
-lerParc2:
-    sub al,48
-    mov [di],al  
-    inc di
-    inc cl
-    mov tamanhoParc1, cl
-    cmp cl,4
-    ja inicSoma
-    jmp validAlgParc2
-    
-continuarAdd: 
+    ; primeiro array
     xor cl,cl
-    lea dx,enter      ;faz um enter    
-    mov ah,09h
-    int 21h                              
-    lea dx,enter      ;faz outro enter    
+    mov si, offset parc1
+    
+    lea dx, msgParc1
+    mov ah , 09h
+    int 21h
+    
+    call lerParc1
+    call clearScreen
+    mov tamanhoParc1,cl
+    
+    ; segundo array
+    xor cl,cl
+    mov di, offset parc2
+    lea dx, msgParc2
+    mov ah , 09h
+    int 21h
+    call lerParc2
+    call clearScreen
+    
+    ;prep resultado
+    cmp cl, tamanhoParc1
+    jae maior
+    jb menor
+    
+
+maior:
+    mov tamanhoSoma, cl
+    jmp prepRes
+    
+menor: 
+     xor cl,cl
+     mov cl, tamanhoParc1
+     mov tamanhoSoma, cl
+  
+
+prepRes:  
+    xor cl,cl
+    lea dx,msgResSoma
     mov ah,09h
     int 21h
-    xor ax,ax           
-    mov dx, offset msgAsk2Parcela   
-    mov ah, 09h     
-    int 21h         
-    xor di, di
-    lea di,parc2Array ;carrega o array
-    jmp validAlgParc2
     
-checkMinus:
-check0add:
-erroAdd:
-inicSoma:  
-somaLoop:
+    dec si
+    dec di
+    mov bx, offset resultadoSoma
+    
+    mov ch,primeiraNegSoma
+    cmp ch,segundaNegSoma
+    je somar       
+    
+    
+lerParc1:   
+    ;pedir input
+    cmp cl, limitadorSoma
+    je backSoma ;retorna se chegou ao tamanho
+    mov ah, 01h
+    int 21h
+    cmp al,13 ;checkar enter
+    je backSoma
+    cmp al,45 ;checkar negativo
+    je parc1neg
+    cmp al,48 ;checkar menor que 0
+    jb erroSoma
+    cmp al,57 ;checkar maior que 9
+    ja erroSoma
+    ;se passou por todas as checkagens, adiciona ao array
+    sub al,48 
+    mov [si],al
+    inc si 
+    inc cl
+    jmp lerParc1  
+    
+lerParc2:   
+    ;pedir input
+    cmp cl, limitadorSoma
+    je backSoma ;retorna se chegou ao tamanho
+    mov ah, 01h
+    int 21h
+    cmp al,13 ;checkar enter
+    je backSoma
+    cmp al,45 ;checkar negativo
+    je parc2neg
+    cmp al,48 ;checkar menor que 0
+    jb erroSoma
+    cmp al,57 ;checkar maior que 9
+    ja erroSoma
+    ;se passou por todas as checkagens, adiciona ao array
+    sub al,48 
+    mov [di],al 
+    inc di 
+    inc cl 
+    jmp lerParc2
 
 
+
+backSoma:
+    ret
+    
+parc1neg:
+    cmp cl,0
+    jne erroNegativo
+    inc primeiraNegSoma
+    jmp lerParc1
+    
+parc2neg:
+    cmp cl,0
+    jne erroNegativo 
+    inc segundaNegSoma
+    jmp lerParc2
+    
+
+erroNegativo:
+    call clearScreen
+    xor ax,ax
+    lea dx,msgErroNegSoma
+    mov ah,09h
+    int 21h
+    mov ah,01h
+    int 21h
+    int 20h
+    
+erroSoma:
+    call clearScreen
+    xor ax,ax
+    lea dx,msgErroSoma
+    mov ah,09h
+    int 21h
+    mov ah,01h
+    int 21h
+    int 20h 
+
+    
+somar:    
+    cmp cl,tamanhoSoma
+    je finalizar   
+    xor ax,ax  
+    mov al,[si]
+    add al,[di]
+    cmp al,10
+    jae carry 
+    add al,[bx]
+    mov [bx],al 
+    dec si
+    dec di
+    inc bx
+    inc cl
+    jmp somar
+
+carry:
+    sub al, 0Ah
+    add [bx],al 
+    dec si
+    dec di
+    inc bx
+    inc cl
+    add [bx],1
+    jmp somar
+    
+
+dispRes:
+    cmp cl,tamanhoSoma
+    ja backbackSoma
+    mov al,[bx]
+    add al,48
+    mov ah, 0Eh
+    int 10h
+    dec bx
+    inc cl
+    jmp dispRes
+    
+finalizar:
+    xor cl,cl
+    xor ax,ax
+    mov cl,primeiraNegSoma
+    cmp cl,1
+    je finalizarNeg
+    xor cl,cl
+    call dispRes
+    jmp fimSoma
+
+finalizarNeg:
+    xor cl,cl
+    mov al,45
+    mov ah,0Eh 
+    int 10h
+    xor ax,ax
+    call dispRes     
+
+    
+    
+fimSoma:
+    int 20h
+    
 ;-------------------------------------------------------------------------------------------------------------------
 Subt:
     call clearScreen
