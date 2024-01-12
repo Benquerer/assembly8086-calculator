@@ -23,8 +23,8 @@ AUX db 0
 ; Adicao
 msgAsk1Parcela db "Digite a primeira parcela: $"
 msgAsk2Parcela db "Digite a segunda parcela: $" 
-parc1Array db 5 dup(0) 
-parc2Array db 5 dup(0)
+parc1Array db 5 dup (0) 
+parc2Array db 5 dup (0)
 tamanhoParc1 db ?
 result db 0
 
@@ -55,8 +55,14 @@ tamanhoaux db 0
 askRaiz db "Introduza um valor: $"  
 arrRaiz db 10 dup (0)   
 flagVirgula db 0 
-tamanhoRaizInteiro db 0     
-tamanhoRaizReal db 0
+tamanhoRaizInteiro dw 0     
+tamanhoRaizReal dw 0  
+currentParNum dw 0 
+resultadoRaiz dw 0 
+maiorPot dw 0 
+currentPar dw 0
+raizAux dw 0 
+raizCalc dw 0
                   
                         
 ;CC  
@@ -572,15 +578,15 @@ raiz:
     int 21h          ; Captura o caractere digitado
 
     cmp al,13            ;Se encontra enter
-    je continuar         ;Da je para continuar
+    je checkNumAlg         ;Da je para continuar
     cmp al,48            ;Se encontra 0
     je check0na1pos1     ;Da je para CHECK0na1pos1 
     cmp al,44            ;Se encontra 0
     je virgula           ;Da je para virgula
     cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroDiv           ;da jump para erro se for menor que 49
+    jb erroRaiz           ;da jump para erro se for menor que 49
     cmp al,57            
-    ja erroDiv           ;Da jump para erro se for maior que 57  
+    ja erroRaiz           ;Da jump para erro se for maior que 57  
     cmp flagVirgula,1
     je  lerRaizReal
     jmp lerRaizInteiro    ;Da jump para funcao lerNumerador      
@@ -590,7 +596,7 @@ lerRaizInteiro:
     sub al, 48
     mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
     inc cl  ; incrementa o tamanho do numerador
-    mov tamanhoRaizInteiro, cl   ;atualiza o tamanho do divisor
+    mov tamanhoRaizInteiro, cx   ;atualiza o tamanho do divisor
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     jmp validarRaiz   
     
@@ -599,7 +605,7 @@ lerRaizReal:
     sub al, 48
     mov [di],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
     inc ch  ; incrementa o tamanho do numerador
-    mov tamanhoRaizReal, ch   ;atualiza o tamanho do divisor
+    mov tamanhoRaizReal, cx   ;atualiza o tamanho do divisor
     inc di  ; incrementa o pointer do array para selecionar as posicoes
     jmp validarRaiz   
     
@@ -625,7 +631,143 @@ erroRaiz:
     lea dx,enter        ;Faz um enter
     mov ah,09h
     int 21h
-    jmp raiz 
+    jmp raiz   
+    
+           
+   
+          
+checkNumAlg:
+    xor ax,ax
+    mov ax,tamanhoRaizInteiro
+    mov bx,2
+    div bx
+    cmp dx,1
+    je resets 
+    jmp resets2   
+    
+resets:
+    xor si,si 
+    xor ax,ax
+       
+
+construirArrImpar:
+    xor cx,cx
+    mov cx,tamanhoRaizInteiro 
+    xor bx,bx
+    mov bx,[si]
+    xor bh,bh
+    mov [si],ax 
+    mov ax,bx   
+    cmp si, cx
+    je resets2  
+    inc si
+    jmp construirArrImpar
+    
+resets2:
+    xor si,si
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+                       
+    
+raizCalculoInteiroP1: 
+   
+    
+    call getParAlg
+    xor ax,ax
+    xor cx,cx
+    mov cl,1
+    call getMaiorPot
+    mov bx, currentPar
+    sub bx, maiorPot
+    mov ax, 100
+    mul bx 
+    mov raizAux, ax
+    jmp raizCalculoInteiroP2    
+    
+    
+    
+raizCalculoInteiroP2: 
+    mov dx, currentParNum
+    mov ax, 2
+    mul dx
+    cmp ax, tamanhoRaizInteiro
+    ja raizCalculoReal
+    call getParAlg
+    mov ax,raizAux
+    add ax, currentPar
+    mov raizAux, ax 
+    mov cx, 1
+    call getRaizCalc
+    mov ax,raizAux
+    sub ax, raizCalc
+    mov raizAux,ax
+               
+
+    
+    
+getParAlg:
+    mov ax, currentParNum
+    mov bx,2
+    mul bx
+    mov si,ax
+    mov ax,[si]
+    xor ah,ah
+    mov bx,10
+    mul bx
+    inc si
+    mov bx,[si]
+    xor bh,bh
+    add ax,bx
+    mov bx, currentParNum
+    inc bx
+    mov currentParNum, bx 
+    mov currentPar, ax
+    ret      
+         
+         
+    
+getMaiorPot:
+    mov ax,cx
+    mul cx   
+    inc cx
+    cmp ax,currentPar
+    jb getMaiorPot
+    sub cx,2
+    mov resultadoRaiz, cx
+    mov ax,cx
+    mul ax
+    mov maiorPot, ax
+    ret 
+           
+           
+getRaizCalc:
+    mov ax,2
+    mul resultadoRaiz 
+    mov bx,10
+    mul bx
+    mov raizCalc,ax 
+    call getRaizCalc2
+    ret  
+             
+
+getRaizCalc2:
+    add raizCalc,cx
+    mov ax,raizCalc
+    mul cx
+    cmp raizAux,ax
+    inc cx
+    jb getRaizCalc2
+    dec cx
+    add raizCalc,cx
+    mov ax,raizCalc
+    mul cx
+    mov raizCalc,ax
+    ret
+            
+            
+raizCalculoReal:
     
 
 ;-------------------------------------------------------------------------------------------------------------------
