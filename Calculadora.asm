@@ -40,6 +40,21 @@ msgResSoma db "Soma dos numeros: $"
 msgErroSoma db "Digito invalido! Carregue qualquer tecla para sair... $" 
 msgErroNegSoma db "Posicao do '-' invalida Carregue qualquer tecla para sair... $"
 
+;Subtracao
+tamanhoMinuendo db 0
+subtraMaiorMinu db 0
+limitadorSubtracao db 10 
+;arrays 
+minuendo db 10 dup(0)
+subtraendo db 10 dup(0)
+resSubtracao db 10 dup(0) 
+;mensagens
+msgMinuendo db "Digite o minuendo: $"
+msgSubtraendo db "Digite o subtraendo: $"
+msgResSub db "Resuldado subtracao: $"
+msgResSubInv db "Resuldado subtracao: -$" 
+msgErroSub db "Digito invalido! pressione qualquer tecla para sair... $"
+
 
 ;Multiplicacao
 askFator1 db "Escolha o primeiro Fator: $"
@@ -408,150 +423,210 @@ fimSoma:
     
 ;-------------------------------------------------------------------------------------------------------------------
 Subt:
-    call clearScreen
+    call clearScreen    ;chama a rotina para limpar a tela
+    
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    xor si,si
+    xor di,di
+    
+    mov si, offset minuendo  ;carrega o endereco do primeiro array em si
+    lea dx, msgMinuendo     ;carrega a mensagem do minuendo em dx e coloca na tela
+    mov ah,09h
+    int 21h
+    
+    call lerMinuendo        ; rotina para ler o minuendo
+    mov tamanhoMinuendo,cl  ; guarda o tamanho do minuendo (contador cl apos a rotina de leitura)  
+    call clearScreen        ;limpar tela
+    
+    
+    xor cl,cl
+    mov di, offset subtraendo    ;carrega o endereco do primeiro array em di
+    lea dx, msgSubtraendo        ;carrega a mensagem do subtraendo em dx e coloca na tela
+    mov ah,09h
+    int 21h
+    call lerSubtraendo  ;rotina para ler o subtraendo
+    call clearScreen    ;limpar tela
+    
+    dec si  ;retorna o pointer do array para o ultimo numero
+    dec di  ;retorna o pointer do array para o ultimo numero
+    
+    cmp cl, tamanhoMinuendo     ;compara o cl (contador do subtraendo) com o tamanho do minuendo
+    ja prepSubInv               ; garante a subtracao com o numero de mais digitos em cima 
+
+    mov bx, offset subtraendo  ;coloca em bx o endereco do array subtraendo
+    mov dl,[bx]                ;coloca em dl o valor do primeiro digito
+    xor bx,bx
+    mov bx, offset minuendo     ;coloca em bx o endereco do array minuendo
+    cmp dl,[bx]                 ;compara o primeiro digito do array minuendo com o primeiro do array subtraendo
+    ja  prepSubInv              ;se o primeiro digito do subtraendo for maior que o do minuendo, vai para a sub invertida
+    jmp prepSub                 ;caso contrario, subtracao normal
+    
+    ;falta adicionar lohica acima para multiplas casasas
+        
+    
+
+lerMinuendo:
+    cmp cl, limitadorSubtracao  ;compara o cl (contador) com o limitador da subtracao 
+    je backSubtracao     ;retorna se chegou ao limite
+    mov ah, 01h     ;pedir input 
+    int 21h 
+    cmp al,13   ;checkar enter
+    je backSubtracao     ;retornar se o input for a tecla enter
+    cmp al,48   ;checkar menor que 0
+    jb erroSubtracao     ; jump para tratar erro de numeros
+    cmp al,57   ;checkar maior que 9
+    ja erroSubtracao     ; jump para tratar erro de numeros
+    ;se passou por todas as checkagens, adiciona ao array
+    sub al,48   ;converte o numero 
+    mov [si],al ;coloca na posicao atual do array
+    inc si      ;incrementa o pointer do array
+    inc cl      ;incrementa o contador
+    jmp lerMinuendo    ;loop
+    
+ 
+lerSubtraendo:
+    cmp cl, limitadorSubtracao  ;compara o cl (contador) com o limitador da subtracao 
+    je backSubtracao     ;retorna se chegou ao limite
+    mov ah, 01h     ;pedir input 
+    int 21h 
+    cmp al,13   ;checkar enter
+    je backSubtracao     ;retornar se o input for a tecla enter
+    cmp al,48   ;checkar menor que 0
+    jb erroSubtracao     ; jump para tratar erro de numeros
+    cmp al,57   ;checkar maior que 9
+    ja erroSubtracao     ; jump para tratar erro de numeros
+    ;se passou por todas as checkagens, adiciona ao array
+    sub al,48   ;converte o numero 
+    mov [di],al ;coloca na posicao atual do array
+    inc di      ;incrementa o pointer do array
+    inc cl      ;incrementa o contador
+    jmp lerSubtraendo    ;loop  
+
+erroSubtracao:
+    call clearScreen    ;rotina para limpar a tela
+    xor ax,ax
+    lea dx,msgErroSub  ;carrega a msg de erro nos digitos subtracao e coloca na tela
+    mov ah,09h
+    int 21h
+    mov ah,01h  ;espera qualquer tecla do usuario para terminar o programa
+    int 21h
+    int 20h  ;termina o programa  
+
+backSubtracao:
+    ret      ;retorna para o call "mais recente"
+
+prepSub:
+    xor cl,cl
+    mov bx, offset resSubtracao   ;colocar o endereco do array de resultado em bx 
+
+subtrair:  
+    ;aqui, o primeiro array representa o minuendo, o segundo o subtraendo
+    cmp cl,tamanhoMinuendo ;verifica se o contador chegou no limitador da subt
+    je prepResSubt  ;caso o limitador tenha sido igualado, preparar para fazer o display do resultado
+    mov al,[si]     ;coloca em al o valor do indice do primeiro array
+    cmp [di],al     ;compara o valor do indice do segundo array com o primeiro
+    ja emprest      ;caso o segundo seja maior, jump para a logica de "emprestar 1"
+    sub al,[di]     ;caso contrario, subtrai o segundo valor do primeiro
+    mov [bx],al     ;guardar digito no array de resultados
+    dec si          ;regredir o pointer do primeiro array
+    dec di          ;regredir o pointer do segundo array
+    inc bx          ;incrementar o pointer do resultado
+    inc cl          ;incrementar o contador
+    jmp subtrair    ;loop
+    
+    
+emprest:
+    ;aqui, o primeiro array representa o minuendo, o segundo o subtraendo
+    dec si          ;decrementa o pointer do primeiro array (avancar uma casa a esquerda)
+    sub [si],1      ;subtrair 1 
+    inc si          ;retornar a posicao original
+    add al,10       ;adicionar ao al o valor retirado do primeiro array
+    sub al,[di]     ;subtrair o valor do segundo array, agora menor que o al
+    mov [bx],al     ;guardar digito no array de resultados
+    ;mesma manipulacao de ponteiros e contador de uma sub normal     
+    dec si          
+    dec di
+    inc bx
+    inc cl
+    jmp subtrair    ;loop de volta para a subtracao
+
+prepSubInv:
+    mov bx, offset resSubtracao ;colocar o endereco do array de resultado em bx 
+    mov tamanhoMinuendo,cl      ;definir como limite da soma o valor em cl (tamanho subtraendo)
+    xor cl,cl    
+        
+SubInv:
+    ;aqui, o primeiro array representa o subtraendo, o segundo o minuendo
+    cmp cl,tamanhoMinuendo  ;verifica se o contador chegou no limitador da subt
+    je prepResSubtInv   ;caso o limitador tenha sido igualado, preparar para fazer o display do resultado
+    mov al,[di]         ;coloca em al o valor do indice do primeiro array
+    cmp [si],al     ;compara o valor do indice do segundo array com o primeiro
+    ja emprestInv   ;caso o segundo seja maior, jump para a logica de "emprestar 1"
+    sub al,[si]     ;caso contrario, subtrai o segundo valor do primeiro
+    mov [bx],al     ;guardar digito no array de resultados
+    dec si          ;regredir o pointer do segundo array
+    dec di          ;regredir o pointer do primeiro array
+    inc bx          ;incrementar o pointer do resultado
+    inc cl          ;incrementar o contador
+    jmp SubInv      ;loop
+
+emprestInv:
+    ;aqui, o primeiro array representa o subtraendo, o segundo o minuendo
+    dec di      ;decrementa o pointer do primeiro array (avancar uma casa a esquerda)
+    sub [di],1  ;subtrair 1
+    inc di      ;retornar a posicao original
+    add al,10       ;adicionar ao al o valor retirado do primeiro array  
+    sub al,[si]     ;subtrair o valor do segundo array, agora menor que o al
+    mov [bx],al     ;guardar digito no array de resultados
+    ;mesma manipulacao de ponteiros e contador de uma sub normal     
+    dec si
+    dec di
+    inc bx
+    inc cl
+    jmp SubInv   ;loop de volta para a subtracao invertida
+     
+    
+prepResSubt:
+    xor cl,cl
+    xor ax,ax
+    lea dx,msgResSub    ;como um normal foi feita, carrega a mensagem de resultado
+    mov ah,09h
+    int 21h     ;coloca na tela a mensagem carregada
+    call dipsResSub ;rotina de mostrar resultado
+    jmp fimSubt     ; finalizar
+    
+prepResSubtInv:
+    xor cl,cl
+    xor ax,ax
+    lea dx,msgResSubInv ;como um invertida foi feita, carrega a mensagem adequada de resultado
+    mov ah,09h
+    int 21h      ;coloca na tela a mensagem carregada
+    call dipsResSub ;rotina de mostrar resultado
+    jmp fimSubt   ; finalizar
+
+ 
+dipsResSub:
+    cmp cl,tamanhoMinuendo ;verificar se o contador esta no limitador da sub 
+    ja backSubtracao    ;se sim, retorna ao call para finalizar o programa
+    mov al,[bx]     ;colocar em al o valor atual de bx    
+    add al,48       ;converter para ascii
+    mov ah, 0Eh      
+    int 10h         ;colocar na tela
+    dec bx          ;regride o ponteiro
+    inc cl          ;incrementar contador
+    jmp dipsResSub  ;loop
+
+    
+fimSubt:
+    int 20h
 ;-------------------------------------------------------------------------------------------------------------------
 Mult:
     
     call clearScreen
-    xor ax,ax
-    xor bx,bx
-    xor cx,cx
-    xor dx,dx
-    mov si, offset fatorArr1 
-    mov dx, offset askFator1 ; Carrega no dx o endereco da frase para pedir o dividendo  
-    mov ah, 09h     ; Funcao para imprimir string
-    int 21h         ; Chamar a interrupcao do DOS para imprimir 
     
-    
-validarFator1:
-
-    ; Recebendo a entrada do usuario
-    mov ah, 01h      ; Servico para receber um caractere do teclado
-    int 21h          ; Captura o caractere digitado
-
-    cmp al,13            ;Se encontra enter
-    je Fator2         ;Da je para continuar
-    cmp al,48            ;Se encontra 0
-    je check0na1pos1Mul     ;Da je para CHECK0na1pos1
-    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroMul           ;da jump para erro se for menor que 49
-    cmp al,57            
-    ja erroMul           ;Da jump para erro se for maior que 57
-    jmp lerFator1     ;Da jump para funcao lerNumerador
-                                                           
-                                                           
-lerFator1: 
-    sub al, 48
-    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    inc cl  ; incrementa o tamanho do Dividendo
-    mov tamanhoFator1, cl  ;atualiza o tamanho do dividendo
-    inc si  ; incrementa o pointer do array para selecionar as posicoes
-    jmp validarFator1  
-
-       
-       
-erroMul:
-    pusha          
-    mov ah, 0x00  
-    mov al, 0x03        ;text mode 80x25 16 colours
-    int 0x10
-    popa
-    
-    lea dx, msgErro     ;imprime a string msgErro
-    mov ah, 09h
-    int 21h 
-      
-    lea dx,enter        ;Faz um enter
-    mov ah,09h
-    int 21h
-    jmp Mult
-    
-    
-    
-check0na1pos1Mul:
-    cmp tamanhoFator1, 0   ;compara o tamanho do dividendo com 0
-    je erroMul                  ;se for igual a zero da erro
-    jmp lerFator1 
-    
-    
-Fator2:
-    call clearScreen
-    xor ax,ax
-    xor bx,bx
-    xor cx,cx
-    xor dx,dx
-    mov si, offset fatorArr2
-    mov dx, offset askFator2 ; Carrega no dx o endereco da frase para pedir o dividendo  
-    mov ah, 09h     ; Funcao para imprimir string
-    int 21h         ; Chamar a interrupcao do DOS para imprimir 
-    
- 
-validarFator2:
-
-    ; Recebendo a entrada do usuario
-    mov ah, 01h      ; Servico para receber um caractere do teclado
-    int 21h          ; Captura o caractere digitado
-
-    cmp al,13            ;Se encontra enter
-    je multCalc         ;Da je para continuar
-    cmp al,48            ;Se encontra 0
-    je check0na1pos1Mul2     ;Da je para CHECK0na1pos1
-    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
-    jb erroMul2           ;da jump para erro se for menor que 49
-    cmp al,57            
-    ja erroMul2           ;Da jump para erro se for maior que 57
-    jmp lerFator2     ;Da jump para funcao lerNumerador
-                                                           
-                                                           
-lerFator2: 
-    sub al, 48
-    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    inc cl  ; incrementa o tamanho do Dividendo
-    mov tamanhoFator2, cl  ;atualiza o tamanho do dividendo
-    inc si  ; incrementa o pointer do array para selecionar as posicoes
-    jmp validarFator2 
-    
-    
-    
-erroMul2:
-    pusha          
-    mov ah, 0x00  
-    mov al, 0x03        ;text mode 80x25 16 colours
-    int 0x10
-    popa
-    
-    lea dx, msgErro     ;imprime a string msgErro
-    mov ah, 09h
-    int 21h 
-      
-    lea dx,enter        ;Faz um enter
-    mov ah,09h
-    int 21h
-    jmp Mult
-    
-    
-    
-check0na1pos1Mul2:
-    cmp tamanhoFator2, 0   ;compara o tamanho do dividendo com 0
-    je erroMul2                  ;se for igual a zero da erro
-    jmp lerFator2 
-    
-            
-            
-            
-multCalc:
-    
-    
-getMaior:
-    cmp tamanhoFator1, tamanhoFator2
-    ja maior1
-    je iguais
-    
-    
-maior1:
-
-
-iguais:
 ;-------------------------------------------------------------------------------------------------------------------              
 erroDiv:
     pusha          
