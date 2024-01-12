@@ -644,13 +644,13 @@ fimSubt:
 ;-------------------------------------------------------------------------------------------------------------------
 Mult:
     
-    call clearScreen
-    xor ax,ax
+    call clearScreen ; funcao para dar clear ao ecra
+    xor ax,ax        ;reset aos registos
     xor bx,bx
     xor cx,cx
     xor dx,dx
-    mov si, offset fatorArr1 
-    mov dx, offset askFator1 ; Carrega no dx o endereco da frase para pedir o dividendo  
+    mov si, offset fatorArr1  ;atribuir ao si fatorArr1
+    mov dx, offset askFator1 ; Carrega no dx o endereco da frase para pedir o fator 1  
     mov ah, 09h     ; Funcao para imprimir string
     int 21h         ; Chamar a interrupcao do DOS para imprimir 
     
@@ -662,27 +662,27 @@ validarFator1:
     int 21h          ; Captura o caractere digitado
 
     cmp al,13            ;Se encontra enter
-    je Fator2         ;Da je para continuar
+    je Fator2            ;Da je para Fator2
     cmp al,48            ;Se encontra 0
-    je check0na1pos1Mul     ;Da je para CHECK0na1pos1
+    je check0na1pos1Mul  ;Da je para CHECK0na1pos1Mul
     cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
     jb erroMul           ;da jump para erro se for menor que 49
     cmp al,57            
     ja erroMul           ;Da jump para erro se for maior que 57
-    jmp lerFator1     ;Da jump para funcao lerNumerador
+    jmp lerFator1     ;Da jump para funcao lerFator1
                                                            
                                                            
 lerFator1: 
     sub al, 48
-    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    inc cx  ; incrementa o tamanho do Dividendo
-    mov tamanhoFator1, cx  ;atualiza o tamanho do dividendo
+    mov [si],al ;armazena o numero recebido no fatorArr1 na posicao si(por default comeca a 0)  
+    inc cx  ; incrementa o tamanho do fator 1
+    mov tamanhoFator1, cx  ;atualiza o tamanho do fator1
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     jmp validarFator1  
 
        
        
-erroMul:
+erroMul:                ;label usada para quando e detetado um erro
     pusha          
     mov ah, 0x00  
     mov al, 0x03        ;text mode 80x25 16 colours
@@ -713,7 +713,7 @@ Fator2:
     xor cx,cx
     xor dx,dx
     mov si, offset fatorArr2
-    mov dx, offset askFator2 ; Carrega no dx o endereco da frase para pedir o dividendo  
+    mov dx, offset askFator2 ; Carrega no dx o endereco da frase para pedir o fator 2  
     mov ah, 09h     ; Funcao para imprimir string
     int 21h         ; Chamar a interrupcao do DOS para imprimir 
     
@@ -725,27 +725,27 @@ validarFator2:
     int 21h          ; Captura o caractere digitado
 
     cmp al,13            ;Se encontra enter
-    je multCalc         ;Da je para continuar
+    je multCalc         ;Da je para multCalc
     cmp al,48            ;Se encontra 0
-    je check0na1pos1Mul2     ;Da je para CHECK0na1pos1
+    je check0na1pos1Mul2     ;Da je para check0na1pos1Mul2
     cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
     jb erroMul2           ;da jump para erro se for menor que 49
     cmp al,57            
     ja erroMul2           ;Da jump para erro se for maior que 57
-    jmp lerFator2     ;Da jump para funcao lerNumerador
+    jmp lerFator2     ;Da jump para funcao lerFator2
                                                            
                                                            
 lerFator2: 
     sub al, 48
-    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    inc cx  ; incrementa o tamanho do Dividendo
-    mov tamanhoFator2, cx  ;atualiza o tamanho do dividendo
+    mov [si],al ;armazena o numero recebido no fatorArr2 na posicao si(por default comeca a 0)  
+    inc cx  ; incrementa o tamanho do fator 2
+    mov tamanhoFator2, cx  ;atualiza o tamanho do fator 2
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     jmp validarFator2 
     
     
     
-erroMul2:
+erroMul2:               ; label para erros
     pusha          
     mov ah, 0x00  
     mov al, 0x03        ;text mode 80x25 16 colours
@@ -771,18 +771,18 @@ check0na1pos1Mul2:
             
             
             
-multCalc: 
+multCalc:                  ;verifica qual e o fator maior
     
     mov ax, tamanhoFator1
     mov cx, tamanhoFator2
     cmp cx, ax
-    jb multResets1
-    jmp multResets2
+    jb multResets1         ;salta para a label multResets1 se o fator 1 for o maior
+    jmp multResets2        ;salta para a label multResets2 se o fator 2 for o maior
 
     
       
  
-multResets1:
+multResets1:                 ;label para dar reset a registos ou operacoes que sao precisas de fazer fora do label principal
     mov si, offset fatorArr2
     mov ax, tamanhoFator2
     dec ax
@@ -792,22 +792,22 @@ multResets1:
 
 
 multCalc1: 
-    mov di, offset fatorArr1
-    mov counterMult,0
-    mov carryMult,0
-    mov multAux,1
-    mov resultMult,0
-    mov al, [si]
-    mov curFator2, ax 
+    mov di, offset fatorArr1  ;carrega o fatorArr1 no di
+    mov counterMult,0    ;variavel usada como counter para as mults
+    mov carryMult,0      ;variavel usada para o carry entre as muls
+    mov multAux,1        ;variavel auxiliar
+    mov resultMult,0     ;resultado da multiplicacao
+    mov al, [si]         ;coloca o numero da posiçao si em al
+    mov curFator2, ax    ;fator 2 atual
     mov cx, tamanhoFator1 
     dec cx  
     add di, cx
     inc cx
-    call getMultCalc1 
-    mov ax,resultMult 
-    mov bx,j
+    call getMultCalc1     ;funcao para fazer as muls para cada algarismo do fator 2
+    mov ax,resultMult     
+    mov bx,j              ;a variavel j e usada para adicionar um ou mais zeros a frente, devido a necessidade de multiplicar por 10 cada resultado das multiplicacoes de cada algarismo de fator 2
     mul bx
-    add resultTotal,ax
+    add resultTotal,ax    ;resultado total de todas as muls juntas
     mov ax,j
     mov dx,10
     mul dx
@@ -815,60 +815,60 @@ multCalc1:
     add i,1
     dec si
     mov ax, tamanhoFator2
-    call getMaiorTamanho 
+    call getMaiorTamanho   ;funcao para descobrir qual vai ser o tamanho do resultado
     mov tamanhoMul, bx
-    cmp i, ax
+    cmp i, ax              ;se o counter i for igual ou maior ao tamanho do fator 2 quer dizer que a mul acabou
     jae endMul
-    jmp multCalc1
+    jmp multCalc1          ;senao volta a fazer o loop para o proximo algarismo
     
     
     
 getMultCalc1:
-    cmp counterMult,cx
+    cmp counterMult,cx     ;este compare e usado caso haja um carry no ultimo algarismo
     je extraCarry1
     mov ax, curFator2
     mov bl, [di]
-    mul bx
-    add ax, carryMult
-    cmp ax, 10
+    mul bx                 ;multiplica os dois algarismos dos dois fatores
+    add ax, carryMult      ;adiciona o carry ao resultado
+    cmp ax, 10             ;se for maior ou igaul a 10 vai para a label do carry
     jae carryMult1 
     mov bx,10
     div bx
     dec di 
-    mov ax,multAux
+    mov ax,multAux         ;multAux e usado como variavel auxiliar para construir o resultado desta multiplicacao, a cada algarismo esta multiplica-se por 10 para poder formar o numero do resultado ocm somas
     mul dx
     add resultMult, ax 
     mov ax,multAux
     mov bx,10
     mul bx
     mov multAux,ax
-    add counterMult, 1 
+    add counterMult, 1     ;counterMult serve como um counter para comparar com o cx e saber quando sair do loop
     mov carryMult,0
-    cmp counterMult, cx
+    cmp counterMult, cx    ;se o counterMult for maior ou igual a cx quer dizer que ja foram feitas as multiplicacoes de todos os algarismos.
     jb getMultCalc1
     ret
     
 
-carryMult1:
+carryMult1:                ;funcao para quando existe carry
     mov bx,10
     div bx
-    mov carryMult, ax
+    mov carryMult, ax      ;divide se por 10 para achar o carry que e o resultado da div
     mov ax,multAux
     mul dx
-    add resultMult, ax
+    add resultMult, ax     ;o resto * multAux vai ser somado ao resultado
     mov ax,multAux
     mov bx,10
     mul bx
     mov multAux,ax 
     dec di 
     add counterMult, 1
-    cmp counterMult, cx
+    cmp counterMult, cx     ;se o counterMult for maior ou igual a cx quer dizer que ja foram feitas as multiplicacoes de todos os algarismos.
     jb getMultCalc1
-    cmp carryMult, 0
+    cmp carryMult, 0        ;este compare e usado se houver um carry no ultimo algarismo
     jne getMultCalc1 
     ret 
 
-extraCarry1:
+extraCarry1:                ;label para adicionar o carry caso esteja no ultimo algarismo
     mov ax, carryMult
     mov dx,multAux
     mul dx
@@ -882,7 +882,7 @@ extraCarry1:
  
  
 multResets2:
-    mov si, offset fatorArr1
+    mov si, offset fatorArr1    ;label para dar reset a registos ou operacoes que sao precisas de fazer fora do label principal
     mov ax, tamanhoFator1
     dec ax
     add si,ax
@@ -890,83 +890,83 @@ multResets2:
  
 
 multCalc2:
-    mov di, offset fatorArr2
-    mov counterMult,0
-    mov carryMult,0
-    mov multAux,1
-    mov resultMult,0
-    mov al, [si]
-    mov curFator1, ax 
+    mov di, offset fatorArr2    ;carrega o fatorArr1 no di
+    mov counterMult,0           ;variavel usada como counter para as mults
+    mov carryMult,0             ;variavel usada para o carry entre as muls
+    mov multAux,1               ;variavel auxiliar
+    mov resultMult,0            ;resultado da multiplicacao
+    mov al, [si]                ;coloca o numero da posiçao si em al
+    mov curFator1, ax           ;fator 2 atual
     mov cx, tamanhoFator2 
     dec cx  
     add di, cx
     inc cx
-    call getMultCalc2 
+    call getMultCalc2           ;funcao para fazer as muls para cada algarismo do fator 2
     mov ax,resultMult 
-    mov bx,j
+    mov bx,j                    ;a variavel j e usada para adicionar um ou mais zeros a frente, devido a necessidade de multiplicar por 10 cada resultado das multiplicacoes de cada algarismo de fator 2
     mul bx
-    add resultTotal,ax
-    mov ax,j
+    add resultTotal,ax          ;resultado total de todas as muls juntas
+    mov ax,j                    
     mov dx,10
     mul dx
     mov j,ax
     add i,1
     dec si
     mov ax, tamanhoFator1
-    call getMaiorTamanho 
+    call getMaiorTamanho        ;funcao para descobrir qual vai ser o tamanho do resultado
     mov tamanhoMul, bx
-    cmp i, ax
+    cmp i, ax                   ;se o counter i for igual ou maior ao tamanho do fator 2 quer dizer que a mul acabou
     jae endMul
-    jmp multCalc2
+    jmp multCalc2               ;senao volta a fazer o loop para o proximo algarismo
     
     
     
-getMultCalc2:
+getMultCalc2:                   ;este compare e usado caso haja um carry no ultimo algarismo
     cmp counterMult,cx
     je extraCarry2
     mov ax, curFator1
     mov bl, [di]
-    mul bx
-    add ax, carryMult
-    cmp ax, 10
+    mul bx                      ;multiplica os dois algarismos dos dois fatores
+    add ax, carryMult           ;adiciona o carry ao resultado
+    cmp ax, 10                  ;se for maior ou igaul a 10 vai para a label do carry
     jae carryMult2 
     mov bx,10
     div bx
     dec di 
     mov ax,multAux
     mul dx
-    add resultMult, ax 
+    add resultMult, ax          ;multAux e usado como variavel auxiliar para construir o resultado desta multiplicacao, a cada algarismo esta multiplica-se por 10 para poder formar o numero do resultado ocm somas
     mov ax,multAux
     mov bx,10
     mul bx
-    mov multAux,ax
+    mov multAux,ax              ;counterMult serve como um counter para comparar com o cx e saber quando sair do loop
     add counterMult, 1 
     mov carryMult,0
-    cmp counterMult, cx
+    cmp counterMult, cx         ;este compare e usado se houver um carry no ultimo algarismo
     jb getMultCalc2
     ret
     
 
-carryMult2:
-    mov bx,10
+carryMult2:                     ;label para adicionar o carry caso esteja no ultimo algarismo
+    mov bx,10                   ;divide se por 10 para achar o carry que e o resultado da div
     div bx
-    mov carryMult, ax
+    mov carryMult, ax           
     mov ax,multAux
     mul dx
-    add resultMult, ax
+    add resultMult, ax          ;o resto * multAux vai ser somado ao resultado
     mov ax,multAux
     mov bx,10
     mul bx
     mov multAux,ax 
     dec di 
     add counterMult, 1
-    cmp counterMult, cx
+    cmp counterMult, cx         ;se o counterMult for maior ou igual a cx quer dizer que ja foram feitas as multiplicacoes de todos os algarismos.
     jb getMultCalc2
-    cmp carryMult, 0
+    cmp carryMult, 0            ;este compare e usado se houver um carry no ultimo algarismo
     jne getMultCalc2 
     ret 
 
-extraCarry2:
+extraCarry2:                    ;label para adicionar o carry caso esteja no ultimo algarismo
     mov ax, carryMult
     mov dx,multAux
     mul dx
@@ -977,7 +977,7 @@ extraCarry2:
        
        
        
-getMaiorTamanho:
+getMaiorTamanho:                ;funcao para descobrir o tamanho da soma
     mov bx,tamanhoMul
     mov cx,counterMult
     cmp bx,cx
@@ -999,27 +999,21 @@ endMul:
     xor cx,cx
     xor dx,dx
 
-    
-    mov ah, 01h      ; Servico para receber um caractere do teclado
-    int 21h
        
     
-    mov dx, offset msgResultMul
+    mov dx, offset msgResultMul      ;apresentar a msgResutlMul
     mov ah, 9
     int 21h  
       
     mov cx, tamanhoMul
     mov ax,1
-    call converte_e_mostraMul ; Chamar a função para converter e mostrar o número
+    call converte_e_mostraMul ; Chamar a funcaoo para converter e mostrar o numero
     
-    
-    mov ah, 01h      ; Servico para receber um caractere do teclado
-    int 21h
     
     jmp start 
     
     
-converte_e_mostraMul:
+converte_e_mostraMul:         ;funcao para converter o resultado para o dsiplay
     mov dx,1
     xor bx,bx 
     cmp tamanhoMul,0
@@ -1075,7 +1069,6 @@ converte_loopMulLast:
                               
 backMul:
     ret 
-    
 ;-------------------------------------------------------------------------------------------------------------------              
 erroDiv:
     pusha          
@@ -1674,39 +1667,39 @@ raiz:
     int 21h          ; Captura o caractere digitado
 
     cmp al,13            ;Se encontra enter
-    je checkNumAlg         ;Da je para continuar
+    je checkNumAlg         ;Da je para checkNumAlg
     cmp al,48            ;Se encontra 0
-    je check0na1pos1Raiz     ;Da je para CHECK0na1pos1 
-    cmp al,44            ;Se encontra 0
+    je check0na1pos1Raiz     ;Da je para check0na1pos1Raiz 
+    cmp al,44            ;Se encontra virgula
     je virgula           ;Da je para virgula
     cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
     jb erroRaiz           ;da jump para erro se for menor que 49
     cmp al,57            
     ja erroRaiz           ;Da jump para erro se for maior que 57  
-    cmp flagVirgula,1
+    cmp flagVirgula,1     ;se a virgula ja tiver sido escrita le em real
     je  lerRaizReal
-    jmp lerRaizInteiro    ;Da jump para funcao lerNumerador      
+    jmp lerRaizInteiro    ;Da jump para funcao lerRaizInteiro      
     
     
-lerRaizInteiro:   
+lerRaizInteiro:        ;funcao para ler e inserir os algarismos no array
     sub al, 48
-    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    inc cl  ; incrementa o tamanho do numerador
-    mov tamanhoRaizInteiro, cx   ;atualiza o tamanho do divisor
+    mov [si],al ;armazena o numero recebido no arrRaiz na posicao si(por default comeca a 0)  
+    inc cl  ; incrementa o tamanho do counter
+    mov tamanhoRaizInteiro, cx   ;atualiza o tamanho da Raiz Inteira
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     jmp validarRaiz   
     
     
-lerRaizReal:   
+lerRaizReal:           ;funcao para a parte real da raiz
     sub al, 48
     mul bl
     xor ah,ah
     add raizReal,ax
-    inc cl  ; incrementa o tamanho do numerador
-    mov tamanhoRaizReal, cx   ;atualiza o tamanho do divisor
+    inc cl  ; incrementa o tamanho do counter
+    mov tamanhoRaizReal, cx   ;atualiza o tamanho do raiz real
     inc di  ; incrementa o pointer do array para selecionar as posicoes
     sub bl, 9
-    cmp tamanhoRaizReal,2
+    cmp tamanhoRaizReal,2      ;se o tamanho for 2 da jump para checkNumAlg
     je checkNumAlg
     jmp validarRaiz   
       
@@ -1719,16 +1712,16 @@ check0na1pos1Raiz:
 
 
     
-virgula:
+virgula:                  ;funcao para quando e escrita virgula
     cmp flagVirgula, 1
     je erroRaiz
-    mov flagVirgula, 1
+    mov flagVirgula, 1    ;troca a flag para 1
     xor cx,cx 
     mov bl, 10
     jmp validarRaiz  
     
     
-erroRaiz:
+erroRaiz:               ;funcao para erros na raiz
     pusha          
     mov ah, 0x00  
     mov al, 0x03        ;text mode 80x25 16 colours
@@ -1747,8 +1740,8 @@ erroRaiz:
            
    
           
-checkNumAlg:
-    xor ax,ax
+checkNumAlg:                    ; funcao para verificar se o tamanho e par ou impar
+    xor ax,ax                   
     mov ax,tamanhoRaizInteiro
     mov bx,2
     div bl
@@ -1761,7 +1754,7 @@ resets:
     xor ax,ax
     mov cx,tamanhoRaizInteiro
        
-
+                              ;constroi um novo array com um zero no inicio caso o tamanho anterior seja impar
 construirArrImpar: 
     xor bx,bx
     mov bl,[si]
@@ -1782,7 +1775,7 @@ resets2:
     xor dx,dx
                        
     
-raizCalculoInteiroP1: 
+raizCalculoInteiroP1:        ;label usada para calcular o primeiro algarismo do resultado da raiz
    
     
     call getParAlgInteiro
@@ -1800,7 +1793,7 @@ raizCalculoInteiroP1:
     jmp raizCalculoInteiroP2    
     
     
-    
+                               ;label para calcular o resto do resultado da raiz (parte inteira)
 raizCalculoInteiroP2:
     mov si, offset arrRaiz 
     mov dx, currentParNum
@@ -1824,7 +1817,7 @@ raizCalculoInteiroP2:
 
     
     
-getParAlgInteiro:
+getParAlgInteiro:              ;funcao para retornar o par de algarismo atua
     mov ax, currentParNum
     mov bx,2
     mul bx
@@ -1843,7 +1836,7 @@ getParAlgInteiro:
          
          
     
-getMaiorPot:
+getMaiorPot:                   ;funcao para retornar a maior potencia que seja menor do que o par de algarismos
     mov ax,cx
     mul cx   
     inc cx
@@ -1858,8 +1851,8 @@ getMaiorPot:
     mov maiorPot, ax
     ret 
            
-           
-getRaizCalcInteiro:
+                               
+getRaizCalcInteiro:            ;funcao para  calcular o resultado da raiz de um par de algarismos
     mov ax,2
     mul resultadoRaiz 
     mov bx,10
@@ -1875,7 +1868,7 @@ getRaizCalcInteiro:
     ret  
              
 
-getRaizCalcInteiro2:
+getRaizCalcInteiro2:          ;continuacao da funcao de cima
     add raizCalc,1
     mov ax,raizCalc
     mul cx  
@@ -1898,7 +1891,7 @@ resets3:
             
     
             
-raizCalculoReal:
+raizCalculoReal:           ;funcao para calcular a parte real do resultado da raiz
     cmp raizAux,0
     je endRaiz
     mov ax,raizAux
@@ -1910,7 +1903,7 @@ raizCalculoReal:
     
         
         
-getRaizCalcReal:
+getRaizCalcReal:           ;funcao para calcular a parte real
     mov ax,2
     mul resultadoRaiz 
     mov bx,10
@@ -1920,7 +1913,7 @@ getRaizCalcReal:
     ret  
              
 
-getRaizCalcReal2:
+getRaizCalcReal2:         ;continuacao da funcao de cima
     add raizCalc,1
     mov ax,raizCalc
     mul cx  
@@ -1945,17 +1938,17 @@ endRaiz:
     
        
     
-    mov dx, offset resultRaiz 
+    mov dx, offset resultRaiz       ;mostrar a mensagem resultRaiz
     mov ah, 9
     int 21h  
     
     sub tamanhoResultReal,1   
     mov cx, tamanhoResultReal
     mov ax,1
-    call converte_e_mostra ; Chamar a função para converter e mostrar o número
+    call converte_e_mostra ; Chamar a funcao para converter e mostrar o número
     
     
-    mov dx, offset msgVirgula
+    mov dx, offset msgVirgula      ;mostrar a msgVirgula
     mov ah, 9
     int 21h
     
@@ -1976,7 +1969,7 @@ endRaiz:
     jmp start 
     
     
-converte_e_mostra:
+converte_e_mostra:            ;converter o resultadoRaiz para o display
     mov dx,1
     cmp tamanhoResultReal,0
     je converte_loop
@@ -2012,7 +2005,6 @@ converte_loop:
     
 back:
     ret
-
 ;-------------------------------------------------------------------------------------------------------------------
 
 cc:
@@ -2044,7 +2036,7 @@ validarCC1Parte:
     int 21h          ; Captura o caractere digitado
 
     cmp al,48            ;Se encontra 0
-    je check0na1pos1CC     ;Da je para CHECK0na1pos1
+    je check0na1pos1CC     ;Da je para check0na1pos1CC
     cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
     jb erroCC           ;da jump para erro se for menor que 49
     cmp al,57            
@@ -2055,7 +2047,7 @@ validarCC1Parte:
 
     call lerCC
     jmp validarCC1Parte
-
+                        ;funcao para erro
 erroCC:
     pusha          
     mov ah, 0x00  
@@ -2079,20 +2071,20 @@ check0na1pos1CC:
     call lerCC  
     jmp validarCC1Parte
 
-lerCC: 
+lerCC:                  ;funcao para ler o input e coloca lo no array. Esta funcao tem ja a soma implementada para fazer verificacao posteriormente
     xor dx,dx
     xor cx,cx
     xor ah,ah 
     sub al,48
-    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    add tamanhoCC, 1  ;atualiza o tamanho do dividendo
+    mov [si],al ;armazena o numero recebido no CCArr na posicao si(por default comeca a 0)  
+    add tamanhoCC, 1  ;atualiza o tamanho do CC
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     mov dl, al
     mov cl, 2
     mov al, tamanhoCC
     div cl
     cmp ah, 1
-    je soma2calc
+    je soma2calc         ;se for impar
     add soma2, dx
     ret      
     
@@ -2101,7 +2093,7 @@ soma2calc:
     mov al, dl
     mul cl 
     cmp ax, 10
-    jae maiorque10
+    jae maiorque10   ;se for maior que 10
     add soma2, ax 
     ret    
     
@@ -2119,7 +2111,7 @@ teste:
     xor dx,dx 
     xor ax,ax 
 
-checkDigit1: 
+checkDigit1:               ;funcao para fazer a soma dos primeiros 8 digitos com o algoritmo
     xor ax,ax 
     dec bl                 ;bl começa a 10 e e decrementado ate 2            ;posiçao do array igual a do ch
     mov al, bl              ;move o bl para o ax para multiplicar
@@ -2133,7 +2125,7 @@ checkDigit1:
     jmp checkDigit1
     
 
-checkDigit1div:
+checkDigit1div:            ;funcao para verificar se o checkDigit esta correto
     xor ax,ax
     xor bx,bx
     xor cx,cx
@@ -2158,13 +2150,13 @@ checkDigit1div:
     sub bl,ah
     jmp checkDigit1dif0
 
-checkDigit1igual0:
+checkDigit1igual0:           ;se for igual a 0
 
     ;DIGITO IGUAL A 0
     cmp cl,0
     je versao
     jmp errado
-
+                             ;se for diferente de 0
 checkDigit1dif0:
 
     cmp cl,bl
@@ -2181,7 +2173,7 @@ errado:
     int 21h          ; Captura o caractere digitado 
     jmp cc
 
-versao: 
+versao:                 ;funcao para ler a parte da versao
     mov cl, tamanhoCC
     mov si, offset CCArr
     add si, cx       
@@ -2219,12 +2211,12 @@ errover:
     jmp cc  
     
  
-versaoNumeros:   
+versaoNumeros:            ;versao para numeros
     mov cl, tamanhoCC
     mov si, cx
     call lerCC
     jmp versao 
-    
+                          ;versao para letras
 versaoLetras:
     sub al, 7  
     mov cl, tamanhoCC
@@ -2233,7 +2225,7 @@ versaoLetras:
     jmp versao
 
 
-checkDigit2:
+checkDigit2:              ;ler e validar o checkDigit 
     ; Recebendo a entrada do usuario
     mov ah, 01h      ; Servico para receber um caractere do teclado
     int 21h          ; Captura o caractere digitado
@@ -2265,7 +2257,7 @@ erroCD2:
     jmp cc
 
 
-checkDigit2div:
+checkDigit2div:         ;verificar o checkDigit 2
     xor cx, cx
     mov cl, dl 
     mov ax, soma2
@@ -2341,15 +2333,15 @@ validarInput:
     jb erroNIF           ;da jump para erro se for menor que 49
     cmp al,57            
     ja erroNIF           ;Da jump para erro se for maior que 57
-    call lerNIF     ;Da jump para funcao lerNumerador 
+    call lerNIF     ;Da jump para funcao lerCC 
     jmp validarInput
     
     
-lerNIF: 
+lerNIF:                 ;funcao para ler nif e colocar no array
     sub al,48
-    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
-    inc cl  ; incrementa o tamanho do Dividendo
-    mov tamanhoNIF, cl  ;atualiza o tamanho do dividendo
+    mov [si],al ;armazena o numero recebido no NIFArr na posicao si(por default comeca a 0)  
+    inc cl  ; incrementa o tamanho do NIF
+    mov tamanhoNIF, cl  ;atualiza o tamanho do NIF
     inc si  ; incrementa o pointer do array para selecionar as posicoes
     cmp cl,9 ; compara se o valor do Dividendo tem 5 algorismos, conta 0,1,2,3,4 
     ret
@@ -2381,7 +2373,7 @@ erroNIF:
           
           
           
-validarNIF:
+validarNIF:                     ;labels para fazer a soma para a validacao posteriormente
     
     mov si, offset NIFArr 
     xor cx,cx 
@@ -2403,7 +2395,7 @@ validarNIF_new:
     je validarNIF2
     jmp validarNIF_new
 
-validarNIF2:
+validarNIF2:                    ;funcao para verificar se o nif e valido
 
     xor dx,dx
     xor bx,bx
@@ -2441,7 +2433,7 @@ NIFInvalido:
     lea dx, msgInvalido     ;imprime a string msgInvalido
     mov ah, 09h
     int 21h
-    mov ah,00h          
+    mov ah,00h
     int 16h
     jmp NIF
 
