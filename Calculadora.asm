@@ -1,4 +1,4 @@
-                                                                           
+                                                                                            
                                                                                                             include 'emu8086.inc'
 
 org 100h
@@ -51,10 +51,11 @@ msgResto db "Resto: $"
 divisor dw 0
 divisorarray db 5 dup (0)
 dividendoarray db 5 dup (0)
-arrAux db 5 dup 0
 tamanhoDividendo db 0
 tamanhoDivisor db 0
 quociente db 0
+countConstrDiv db 0
+counterAuxArr db 2
 resto db 0
 HO db 0
 countDiv db 0
@@ -427,7 +428,7 @@ divInteira:
     mov ah, 09h     ; Funcao para imprimir string
     int 21h         ; Chamar a interrupcao do DOS para imprimir
     xor si, si
-    
+    lea si,dividendoarray ;carrega o array
    
              
 
@@ -559,25 +560,19 @@ continuar2:
     jmp divisao
 
 divisao:
-    
-    ;DEBUG
-    
-    ;xor bx,bx
-    ;lea si,divisorarray
-    ;lea di,dividendoarray
-    ;call printDivs
-
     mov quociente , 0   ; Passa quociente para 0
     mov resto , 0       ; Passa resto para 0
     mov HO , 0          ; Passa HO para 0
     
     ;passar divisorarray para um numero so (divisor)
     xor bx,bx
+    mov si, OFFSET divisorarray
     mov bl , 1
-    mov ax , 1
-    mul tamanhoDividendo 
-    mov si, ax
-    sub si,1      ;si comeca no lenght do dividendo - 1
+    mov ax ,1
+    mul tamanhoDivisor 
+    dec ax
+    mov countConstrDiv, al                    
+    add si,ax                 ;si comeca no lenght do dividendo - 1
     xor cx,cx
     xor ax,ax
     mov cx, 1
@@ -597,60 +592,92 @@ ConstrDiv:
     mul bx
     mov cx, ax
     
-    cmp si,0            ;Verifica se ja precorreu todos os elementos do divisor
+    cmp countConstrDiv ,0            ;Verifica se ja precorreu todos os elementos do divisor
     je PreConstrAuxArr           ;Caso sim, constroi o array auxiliar
     
     dec si
+    dec countConstrDiv
                            
     jmp ConstrDiv
     
 PreConstrAuxArr:        ;preparar registos para construir array auxiliar
-    lea si, auxArr
+    mov si, OFFSET auxArr
     inc si
-    mov bx, divisor
-    mov [si] , bx
     inc si
-    mov bx, divisor
+    mov ax, divisor
+    mov [si] , ax
+    mov ax, divisor
+    inc si
+    inc si
     
 
     jmp ConstrAuxArr
 
 ConstrAuxArr:
 
-    add bx,bx           ;Multiplica o o valor do divisor
-    mov [si] , bx       ;Copia o resultado da multiplicacao para o array
+    add ax,divisor      ;Multiplica o o valor do divisor
+    mov [si] , ax       ;Copia o resultado da multiplicacao para o array
     
-    cmp si, 10          ;Verifica se o contador chegou ao 10
+    inc counterAuxArr   ;Incrementa o contador
+    
+    mov bl,counterAuxArr 
+    cmp bl, 10          ;Verifica se o contador chegou ao 10
     je iniciarDivisao   ;Caso tenha, salta para o iniciarDivisao
     
-    inc si              ;Incrementa o contador 
+    inc si
+    inc si 
      
     jmp ConstrAuxArr    ;Volta a correr o ConstrAuxArr
       
 
 iniciarDivisao:
-    lea si,[dividendoarray] ;inicializar si como o array do dividendo
-    mov al, [si]            ;passar o primeiro digito do array para ax
-              
-              
-    sub al, 48              ;passar al para decimal e armazenar em HO
-    mov HO, al                         
-    Call print_num_uns
+    xor ax,ax
+    xor cx,cx
     
-    jmp verificardivaux ;Salta para o verificardivaux
+    mov si, OFFSET dividendoarray       ;inicializar si como o array do dividendo
+    mov al, [si]                        ;passar o primeiro digito do array para ax
+    mov bl , tamanhoDividendo
+    mov tamanhoaux, bl    ;passar o tamanho do dividendo para o tamanho do array auxiliar         
+    xor bx,bx
+              
+    mov HO, al                         
+
+    
+    jmp verificardivaux           ;Salta para o verificardivaux
 
 verificardivaux:
-    cmp tamanhoaux , 48 ; Verifica se o dividendoAux esta vazio compara com "0"
-    je finalDiv         ; Caso esteja salta para o finalDiv
+    cmp tamanhoaux , 0  ;Verifica se o dividendoAux esta vazio compara com "0"
+    je finalDiv         ;Caso esteja salta para o finalDiv
 
     jmp proximaIteracao
 
 proximaIteracao:
     
-    ;Verifical qual e o maior valor do array auxArr menor que HO
+    
+    mov si, OFFSET auxArr ;Verifica qual o maior valor do array auxArr menor que HO
+    call calcularMenorAux ;Guarda resultado em CX e o index em bl
+    
+    cmp bl, 0
+    
+    
 
     jmp verificardivaux
 
+calcularMenorAux:
+    
+    mov cx, ax          ;Passa o valor de ax para cx (valor anterior)
+    mov ax, [SI]        ;Passa o valor do array para ax
+    
+    add si, 2           ;Incrementa SI (+2 por causa de ser 16bits)
+    
+    mov bl,bh           ;Passa o valor de bh para bl (index anterior)
+    inc bh              ;Incrementa o valor do array para ax
+    
+    mov bl, HO          ;Passa HO para os lower bits do bx
+    cmp ax, bx          ;Compara ax com HO
+    jb calcularMenorAux ;Caso HO seja maior que ax(valor do array) passa para proximo elmento do array
+    
+    ret                 ;Caso contrario volta para a funcao anterior com o numero do array em cx
 
 finalDiv:
     mov ah, HO      ; Copia o valor do High Order para o resto
