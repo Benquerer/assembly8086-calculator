@@ -192,199 +192,209 @@ erro:
 ;-------------------------------------------------------------------------------------------------------------------- 
 adicao:
 
-    ; primeiro array
-    xor cl,cl
-    mov si, offset parc1
     
-    lea dx, msgParc1
+    call clearScreen    ;chama a rotina para limpar a tela
+    
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    xor si,si
+    xor di,di 
+
+    
+    mov si, offset parc1    ;carrega o endereco do primeiro array no si
+    
+    ;primeiro array
+    lea dx, msgParc1    ;carrega o endereco da msgParc1 e coloca na tela
     mov ah , 09h
     int 21h
-    
-    call lerParc1
-    call clearScreen
-    mov tamanhoParc1,cl
+    call lerParc1   ;iniciar rotina para ler a primeira parcela
+    call clearScreen    ; rotina para limpar a tela
+    mov tamanhoParc1,cl     ;guarda o tamanho da parcela introduzida 
     
     ; segundo array
-    xor cl,cl
-    mov di, offset parc2
-    lea dx, msgParc2
+    xor cl,cl       ;limpa cl para contar o tamanho da proxima parcela
+    mov di, offset parc2    ;carrega o endereco do segundo array em di
+    lea dx, msgParc2    ;carrega o endereco da msgParc2 e coloca na tela
     mov ah , 09h
     int 21h
-    call lerParc2
-    call clearScreen
+    call lerParc2   ;iniciar rotina para ler a segunda parcela
+    call clearScreen    ;rotina para limpar a tela 
     
-    ;prep resultado
-    cmp cl, tamanhoParc1
-    jae maior
-    jb menor
+    ;preparar resultado (definir tamanho da soma baseado na quantidade de digitos de cada parcela)
+    cmp cl, tamanhoParc1    ;cl esta com o tanho da segunda parcela
+    jae maior   ;pular para a etiqueta maior, se forem iguais, ou a segunda tiver mais digitos
+    jb menor    ;pular para a etiqueta maior, se a primeira parcela tiver mais digitos
     
 
 maior:
-    mov tamanhoSoma, cl
-    jmp prepRes
+    mov tamanhoSoma, cl     ;guarda o numero de digitos da maior parcela (a segunda, que esta em cl)
+    jmp prepRes     ;jump para preparacao do resultado
     
 menor: 
-     xor cl,cl
-     mov cl, tamanhoParc1
-     mov tamanhoSoma, cl
+     xor cl,cl  ;limpar cl
+     mov cl, tamanhoParc1   ;passa para o cl a quantidade de digitos da maior parcela
+     mov tamanhoSoma, cl    ;guarda o numero de digitos.
   
 
 prepRes:  
-    xor cl,cl
-    lea dx,msgResSoma
+    xor cl,cl   ;limpa o cl
+    lea dx,msgResSoma   ;carrega o endereco da mensagem de resultado no dx e a coloca na tela
     mov ah,09h
     int 21h
     
-    dec si
-    dec di
-    mov bx, offset resultadoSoma
+    dec si  ;retorna o si para a ultima posicao do array (sai da leitura de parcela com 1 a mais)
+    dec di  ;retorna o di para a ultima posicao do array (sai da leitura de parcela com 1 a mais)
+    mov bx, offset resultadoSoma    ;carrega para o bx o endereco do array de resultado
     
-    mov ch,primeiraNegSoma
-    cmp ch,segundaNegSoma
-    je somar       
+    mov ch,primeiraNegSoma  ;coloca no ch a "flag" de negativo da primeira parcela
+    cmp ch,segundaNegSoma   ;compara com a "flag" de negativo da segunda parcela
+    je somar    ;se as duas tiverem o mesmo sinal, pula para a soma normal
+    
+    ;codigo para sinais diferentes
     
     
 lerParc1:   
-    ;pedir input
-    cmp cl, limitadorSoma
-    je backSoma ;retorna se chegou ao tamanho
-    mov ah, 01h
-    int 21h
-    cmp al,13 ;checkar enter
-    je backSoma
-    cmp al,45 ;checkar negativo
-    je parc1neg
-    cmp al,48 ;checkar menor que 0
-    jb erroSoma
-    cmp al,57 ;checkar maior que 9
-    ja erroSoma
+    
+    cmp cl, limitadorSoma  ;compara o cl (contador) com o limitador da soma 
+    je backSoma     ;retorna se chegou ao limite
+    mov ah, 01h     ;pedir input 
+    int 21h 
+    cmp al,13   ;checkar enter
+    je backSoma     ;retornar se o input for a tecla enter 
+    cmp al,45   ;checkar negativo
+    je parc1neg     ; verificar se negativo esta na posicao correta
+    cmp al,48   ;checkar menor que 0
+    jb erroSoma     ; jump para tratar erro de numeros
+    cmp al,57   ;checkar maior que 9
+    ja erroSoma     ; jump para tratar erro de numeros
     ;se passou por todas as checkagens, adiciona ao array
-    sub al,48 
-    mov [si],al
-    inc si 
-    inc cl
-    jmp lerParc1  
+    sub al,48   ;converte o numero 
+    mov [si],al ;coloca na posicao atual do array
+    inc si      ;incrementa o pointer do array
+    inc cl      ;incrementa o contador
+    jmp lerParc1    ;loop
     
 lerParc2:   
-    ;pedir input
-    cmp cl, limitadorSoma
-    je backSoma ;retorna se chegou ao tamanho
-    mov ah, 01h
+    
+    cmp cl, limitadorSoma ;compara o cl (contador) com o limitador da soma 
+    je backSoma     ;retorna se chegou ao limite
+    mov ah, 01h     ;pedir input
     int 21h
-    cmp al,13 ;checkar enter
-    je backSoma
-    cmp al,45 ;checkar negativo
-    je parc2neg
-    cmp al,48 ;checkar menor que 0
-    jb erroSoma
-    cmp al,57 ;checkar maior que 9
-    ja erroSoma
+    cmp al,13   ;checkar enter
+    je backSoma     ;retornar se o input for a tecla enter 
+    cmp al,45   ;checkar negativo
+    je parc2neg    ; verificar se negativo esta na posicao correta 
+    cmp al,48   ;checkar menor que 0
+    jb erroSoma     ; jump para tratar erro de numeros
+    cmp al,57   ;checkar maior que 9
+    ja erroSoma     ; jump para tratar erro de numeros
     ;se passou por todas as checkagens, adiciona ao array
-    sub al,48 
-    mov [di],al 
-    inc di 
-    inc cl 
-    jmp lerParc2
-
+    sub al,48   ;converte o numero 
+    mov [di],al     ;coloca na posicao atual do array
+    inc di      ;incrementa o pointer do array
+    inc cl      ;incrementa o contador
+    jmp lerParc2   ;loop
 
 
 backSoma:
-    ret
+    ret     ;retorna para o "atual "call 
     
 parc1neg:
-    cmp cl,0
-    jne erroNegativo
-    inc primeiraNegSoma
-    jmp lerParc1
+    cmp cl,0    ;verifica se o contador ainda esta a 0
+    jne erroNegativo    ;caso nao esteja, trata o erro de negativo fora de posicao
+    inc primeiraNegSoma     ;se a posicao for valida, atualiza a flag referente a respectiva parcela 
+    jmp lerParc1 ;retorna a leitura
     
 parc2neg:
-    cmp cl,0
-    jne erroNegativo 
-    inc segundaNegSoma
-    jmp lerParc2
+    cmp cl,0    ;verifica se o contador ainda esta a 0
+    jne erroNegativo    ;caso nao esteja, trata o erro de negativo fora de posicao
+    inc segundaNegSoma  ;se a posicao for valida, atualiza a flag referente a respectiva parcela 
+    jmp lerParc2    ;retorna a leitura
     
 
 erroNegativo:
-    call clearScreen
-    xor ax,ax
-    lea dx,msgErroNegSoma
+    call clearScreen    ;rotina para limpar a tela
+    xor ax,ax  
+    lea dx,msgErroNegSoma  ;carrega a msg de erro na posicao do '-' e coloca na tela
     mov ah,09h
     int 21h
-    mov ah,01h
+    mov ah,01h  ;espera qualquer tecla do usuario para terminar o programa
     int 21h
-    int 20h
+    int 20h     ;termina o programa
     
 erroSoma:
-    call clearScreen
+    call clearScreen    ;rotina para limpar a tela
     xor ax,ax
-    lea dx,msgErroSoma
+    lea dx,msgErroSoma  ;carrega a msg de erro nos digitos da soma e coloca na tela
     mov ah,09h
     int 21h
-    mov ah,01h
+    mov ah,01h  ;espera qualquer tecla do usuario para terminar o programa
     int 21h
-    int 20h 
+    int 20h  ;termina o programa
 
     
 somar:    
-    cmp cl,tamanhoSoma
-    je finalizar   
+    cmp cl,tamanhoSoma      ;verifica se o contador chegou no limitador da soma
+    je finalizar    ;se sim, pula para a finalizacao
     xor ax,ax  
-    mov al,[si]
-    add al,[di]
-    cmp al,10
-    jae carry 
-    add al,[bx]
-    mov [bx],al 
-    dec si
-    dec di
-    inc bx
-    inc cl
-    jmp somar
+    mov al,[si]     ;coloca em al o atual valor do indice do primeiro array
+    add al,[di]     ;adiciona o valor que esta em di
+    cmp al,10       ;verifica se existe necessidade de carry (si + di >=10)
+    jae carry       ;rotina para carry
+    add al,[bx]     ;adiciona o valor que ja estava na posicao
+    mov [bx],al     ;coloca o resultado no array
+    dec si          ;regride o pointer da primeira parcela
+    dec di          ;regride o pointer da segunda parcela
+    inc bx          ;incrementa o pointer do array resultado
+    inc cl          ;incrementa o contador
+    jmp somar       ; loop
 
 carry:
-    sub al, 0Ah
-    add [bx],al 
-    dec si
-    dec di
-    inc bx
-    inc cl
-    add [bx],1
-    jmp somar
+    sub al, 0Ah     ;em caso de carry, retira 10 do resultado da soma (sobrando o que ficaria na posicao em al)
+    add [bx],al     ;coloca a sonbra na posicao 
+    dec si          ;regride o pointer da primeira parcela
+    dec di          ;regride o pointer da segunda parcela
+    inc bx          ;incrementa o pointer do array resultado
+    inc cl          ;incrementa o contador
+    add [bx],1      ;coloca o carry na posicao atual do array (foi incrementado, entao esta no index seguinte ao inicio da etiqueta)
+    jmp somar       ;volta para a soma
     
 
 dispRes:
-    cmp cl,tamanhoSoma
-    ja backbackSoma
-    mov al,[bx]
-    add al,48
-    mov ah, 0Eh
-    int 10h
-    dec bx
-    inc cl
-    jmp dispRes
+    cmp cl,tamanhoSoma  ;compara o contador com o limitador da soma (tamanho do resultado)
+    ja backSoma     ;se passou, retorna o call (usa o ja para tratar overflows)
+    mov al,[bx]    ;coloca no al o atual digito para ser mostrado na tela
+    add al,48       ;converte o valor para ascii
+    mov ah, 0Eh 
+    int 10h     ;coloca o valor em al na tela
+    dec bx      ;regride o pointer do resultado
+    inc cl      ;incrementa o contador
+    jmp dispRes     ;loop
     
 finalizar:
     xor cl,cl
     xor ax,ax
-    mov cl,primeiraNegSoma
-    cmp cl,1
-    je finalizarNeg
-    xor cl,cl
-    call dispRes
-    jmp fimSoma
+    mov cl,primeiraNegSoma      ;coloca em cl a "flag" de sinal utuilizada na soma
+    cmp cl,1    ;verifica se a flag da soma foi 1
+    je finalizarNeg     ;se sim, a soma foi entre dois numeros negativos, entao faz a finalizacao adequada
+    xor cl,cl   ;limpa o cl para servir de contador
+    call dispRes    ;rotina para display do resultado
+    jmp fimSoma     ;finalizar o programa
 
 finalizarNeg:
     xor cl,cl
-    mov al,45
+    mov al,45   ;carrega em al o valor ascii de '-' e coloca na tela
     mov ah,0Eh 
     int 10h
     xor ax,ax
-    call dispRes     
+    call dispRes ;rotina para display do resultado    
 
     
     
 fimSoma:
-    int 20h
+    int 20h     ;finaliza o programa
     
 ;-------------------------------------------------------------------------------------------------------------------
 Subt:
