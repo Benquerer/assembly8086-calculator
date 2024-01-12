@@ -58,11 +58,25 @@ msgErroSub db "Digito invalido! pressione qualquer tecla para sair... $"
 
 ;Multiplicacao
 askFator1 db "Escolha o primeiro Fator: $"
-askFator2 db "Escolha o segundo Fator: $"
+askFator2 db "Escolha o segundo Fator: $" 
+msgResultMul db "Resultado: $"
 fatorArr1 db 10 dup (0)   
-fatorArr2 db 10 dup (0)
-tamanhoFator1 db 0  
-tamanhoFator2 db 0
+fatorArr2 db 10 dup (0) 
+resultMultArr db 10 dup (0) 
+resultMult dw 0  
+tamanhoFator1 dw 0  
+tamanhoFator2 dw 0
+tamanhoMult dw 0 
+carryMult dw 0 
+counterMult dw 0 
+multAux dw 0
+curFator2 dw 0
+curFator1 dw 0 
+i dw 0
+j dw 0
+resultTotal dw 0 
+tamanhoMul dw 0
+convertMul dw 0 
 
 
 
@@ -626,6 +640,436 @@ fimSubt:
 Mult:
     
     call clearScreen
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    mov si, offset fatorArr1 
+    mov dx, offset askFator1 ; Carrega no dx o endereco da frase para pedir o dividendo  
+    mov ah, 09h     ; Funcao para imprimir string
+    int 21h         ; Chamar a interrupcao do DOS para imprimir 
+    
+    
+validarFator1:
+
+    ; Recebendo a entrada do usuario
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado
+
+    cmp al,13            ;Se encontra enter
+    je Fator2         ;Da je para continuar
+    cmp al,48            ;Se encontra 0
+    je check0na1pos1Mul     ;Da je para CHECK0na1pos1
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroMul           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroMul           ;Da jump para erro se for maior que 57
+    jmp lerFator1     ;Da jump para funcao lerNumerador
+                                                           
+                                                           
+lerFator1: 
+    sub al, 48
+    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
+    inc cx  ; incrementa o tamanho do Dividendo
+    mov tamanhoFator1, cx  ;atualiza o tamanho do dividendo
+    inc si  ; incrementa o pointer do array para selecionar as posicoes
+    jmp validarFator1  
+
+       
+       
+erroMul:
+    pusha          
+    mov ah, 0x00  
+    mov al, 0x03        ;text mode 80x25 16 colours
+    int 0x10
+    popa
+    
+    lea dx, msgErro     ;imprime a string msgErro
+    mov ah, 09h
+    int 21h 
+      
+    lea dx,enter        ;Faz um enter
+    mov ah,09h
+    int 21h
+    jmp Mult
+    
+    
+    
+check0na1pos1Mul:
+    cmp tamanhoFator1, 0   ;compara o tamanho do dividendo com 0
+    je erroMul                  ;se for igual a zero da erro
+    jmp lerFator1 
+    
+    
+Fator2:
+    call clearScreen
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    mov si, offset fatorArr2
+    mov dx, offset askFator2 ; Carrega no dx o endereco da frase para pedir o dividendo  
+    mov ah, 09h     ; Funcao para imprimir string
+    int 21h         ; Chamar a interrupcao do DOS para imprimir 
+    
+ 
+validarFator2:
+
+    ; Recebendo a entrada do usuario
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado
+
+    cmp al,13            ;Se encontra enter
+    je multCalc         ;Da je para continuar
+    cmp al,48            ;Se encontra 0
+    je check0na1pos1Mul2     ;Da je para CHECK0na1pos1
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroMul2           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroMul2           ;Da jump para erro se for maior que 57
+    jmp lerFator2     ;Da jump para funcao lerNumerador
+                                                           
+                                                           
+lerFator2: 
+    sub al, 48
+    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
+    inc cx  ; incrementa o tamanho do Dividendo
+    mov tamanhoFator2, cx  ;atualiza o tamanho do dividendo
+    inc si  ; incrementa o pointer do array para selecionar as posicoes
+    jmp validarFator2 
+    
+    
+    
+erroMul2:
+    pusha          
+    mov ah, 0x00  
+    mov al, 0x03        ;text mode 80x25 16 colours
+    int 0x10
+    popa
+    
+    lea dx, msgErro     ;imprime a string msgErro
+    mov ah, 09h
+    int 21h 
+      
+    lea dx,enter        ;Faz um enter
+    mov ah,09h
+    int 21h
+    jmp Mult
+    
+    
+    
+check0na1pos1Mul2:
+    cmp tamanhoFator2, 0   ;compara o tamanho do dividendo com 0
+    je erroMul2                  ;se for igual a zero da erro
+    jmp lerFator2 
+    
+            
+            
+            
+multCalc: 
+    
+    mov ax, tamanhoFator1
+    mov cx, tamanhoFator2
+    cmp cx, ax
+    jb multResets1
+    jmp multResets2
+
+    
+      
+ 
+multResets1:
+    mov si, offset fatorArr2
+    mov ax, tamanhoFator2
+    dec ax
+    add si,ax
+    mov j,1
+
+
+
+multCalc1: 
+    mov di, offset fatorArr1
+    mov counterMult,0
+    mov carryMult,0
+    mov multAux,1
+    mov resultMult,0
+    mov al, [si]
+    mov curFator2, ax 
+    mov cx, tamanhoFator1 
+    dec cx  
+    add di, cx
+    inc cx
+    call getMultCalc1 
+    mov ax,resultMult 
+    mov bx,j
+    mul bx
+    add resultTotal,ax
+    mov ax,j
+    mov dx,10
+    mul dx
+    mov j,ax
+    add i,1
+    dec si
+    mov ax, tamanhoFator2
+    call getMaiorTamanho 
+    mov tamanhoMul, bx
+    cmp i, ax
+    jae endMul
+    jmp multCalc1
+    
+    
+    
+getMultCalc1:
+    cmp counterMult,cx
+    je extraCarry1
+    mov ax, curFator2
+    mov bl, [di]
+    mul bx
+    add ax, carryMult
+    cmp ax, 10
+    jae carryMult1 
+    mov bx,10
+    div bx
+    dec di 
+    mov ax,multAux
+    mul dx
+    add resultMult, ax 
+    mov ax,multAux
+    mov bx,10
+    mul bx
+    mov multAux,ax
+    add counterMult, 1 
+    mov carryMult,0
+    cmp counterMult, cx
+    jb getMultCalc1
+    ret
+    
+
+carryMult1:
+    mov bx,10
+    div bx
+    mov carryMult, ax
+    mov ax,multAux
+    mul dx
+    add resultMult, ax
+    mov ax,multAux
+    mov bx,10
+    mul bx
+    mov multAux,ax 
+    dec di 
+    add counterMult, 1
+    cmp counterMult, cx
+    jb getMultCalc1
+    cmp carryMult, 0
+    jne getMultCalc1 
+    ret 
+
+extraCarry1:
+    mov ax, carryMult
+    mov dx,multAux
+    mul dx
+    add resultMult, ax
+    mov ax, resultMult
+    add counterMult, 1
+    ret  
+ 
+ 
+ 
+ 
+ 
+multResets2:
+    mov si, offset fatorArr1
+    mov ax, tamanhoFator1
+    dec ax
+    add si,ax
+    mov j,1
+ 
+
+multCalc2:
+    mov di, offset fatorArr2
+    mov counterMult,0
+    mov carryMult,0
+    mov multAux,1
+    mov resultMult,0
+    mov al, [si]
+    mov curFator1, ax 
+    mov cx, tamanhoFator2 
+    dec cx  
+    add di, cx
+    inc cx
+    call getMultCalc2 
+    mov ax,resultMult 
+    mov bx,j
+    mul bx
+    add resultTotal,ax
+    mov ax,j
+    mov dx,10
+    mul dx
+    mov j,ax
+    add i,1
+    dec si
+    mov ax, tamanhoFator1
+    call getMaiorTamanho 
+    mov tamanhoMul, bx
+    cmp i, ax
+    jae endMul
+    jmp multCalc2
+    
+    
+    
+getMultCalc2:
+    cmp counterMult,cx
+    je extraCarry2
+    mov ax, curFator1
+    mov bl, [di]
+    mul bx
+    add ax, carryMult
+    cmp ax, 10
+    jae carryMult2 
+    mov bx,10
+    div bx
+    dec di 
+    mov ax,multAux
+    mul dx
+    add resultMult, ax 
+    mov ax,multAux
+    mov bx,10
+    mul bx
+    mov multAux,ax
+    add counterMult, 1 
+    mov carryMult,0
+    cmp counterMult, cx
+    jb getMultCalc2
+    ret
+    
+
+carryMult2:
+    mov bx,10
+    div bx
+    mov carryMult, ax
+    mov ax,multAux
+    mul dx
+    add resultMult, ax
+    mov ax,multAux
+    mov bx,10
+    mul bx
+    mov multAux,ax 
+    dec di 
+    add counterMult, 1
+    cmp counterMult, cx
+    jb getMultCalc2
+    cmp carryMult, 0
+    jne getMultCalc2 
+    ret 
+
+extraCarry2:
+    mov ax, carryMult
+    mov dx,multAux
+    mul dx
+    add resultMult, ax
+    mov ax, resultMult
+    add counterMult, 1
+    ret  
+       
+       
+       
+getMaiorTamanho:
+    mov bx,tamanhoMul
+    mov cx,counterMult
+    cmp bx,cx
+    jb maiorTamanho
+    ret
+    
+    
+maiorTamanho:
+    mov bx,cx
+    ret
+    
+
+
+endMul: 
+    call clearScreen
+    
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+
+    
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h
+       
+    
+    mov dx, offset msgResultMul
+    mov ah, 9
+    int 21h  
+      
+    mov cx, tamanhoMul
+    mov ax,1
+    call converte_e_mostraMul ; Chamar a função para converter e mostrar o número
+    
+    
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h
+    
+    jmp start 
+    
+    
+converte_e_mostraMul:
+    mov dx,1
+    xor bx,bx 
+    cmp tamanhoMul,0
+    je converte_loopMulLast
+    ; Converte o valor em AX para uma string e a mostra diretamente
+    mov bx,10
+    mul bx
+    mov dx,ax
+    inc ch
+    cmp ch,cl
+    mov bx,1
+    mov convertMul, dx
+    je converte_loopMul
+    jmp converte_e_mostraMul 
+    
+    
+converte_loopMul:
+    mov ax,convertMul
+    mul bx        
+    inc bx
+    cmp ax,resultTotal
+    jb converte_loopMul
+    sub bx,2
+    xor ax,ax
+    mov al,bl
+    add al, '0'        ; Converter o resto para caractere ASCII
+    ; Mostrar o caractere diretamente
+    mov ah, 14
+    int 10h            ; Chamar interrupção do DOS
+    mov dx,convertMul
+    xor ah,ah
+    sub al,48
+    sub tamanhoMul,1
+    mov cx, tamanhoMul
+    mul dx 
+    sub resultTotal,ax
+    mov ax,1 
+    cmp tamanhoMul,65535
+    je backMul
+    cmp tamanhoMul,0
+    jae converte_e_mostraMul 
+    
+    
+converte_loopMulLast:
+    xor ax,ax
+    mov ax,resultTotal
+    add al, '0'        ; Converter o resto para caractere ASCII
+    ; Mostrar o caractere diretamente
+    mov ah, 14
+    int 10h            ; Chamar interrupção do DOS 
+    
+       
+                              
+backMul:
+    ret 
     
 ;-------------------------------------------------------------------------------------------------------------------              
 erroDiv:
