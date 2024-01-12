@@ -91,16 +91,21 @@ divisorarray db 5 dup (0)
 dividendoarray db 5 dup (0)
 tamanhoDividendo db 0
 tamanhoDivisor db 0
-quociente db 0
+quociente dw 0  
+tamanhoHO db 0
+auxHO dw 0
+CasaDoQuociente db 1
 countConstrDiv db 0
 counterAuxArr db 2
-resto db 0
-HO db 0
+resto dw 0
+HO dw 0
 countDiv db 0
 aux1 db 0
-auxArr dw 10 dup (0)        ;Esta merda nao funciona, tou farto dessa porcaria 
+auxArr dw 10 dup (0)      
 dividendoAux db 5 dup (0)
-tamanhoaux db 0
+tamanhoaux db 0   
+potenciaAux dw 0
+tamanhoauxHO db 0
                         
 ;Raiz
 askRaiz db "Introduza um valor: $" 
@@ -1263,21 +1268,17 @@ ConstrDiv:
     cmp countConstrDiv ,0            ;Verifica se ja precorreu todos os elementos do divisor
     je PreConstrAuxArr           ;Caso sim, constroi o array auxiliar
     
-    dec si
-    dec countConstrDiv
+    dec si                       ;Decrementa si
+    dec countConstrDiv           ;Decrementa countConstrDiv
                            
     jmp ConstrDiv
     
 PreConstrAuxArr:        ;preparar registos para construir array auxiliar
     mov si, OFFSET auxArr
-    inc si
-    inc si
-    mov ax, divisor
-    mov [si] , ax
-    mov ax, divisor
-    inc si
-    inc si
-    
+    add si, 2           ;Incrementa SI (+2 por ser 16 bits)
+    mov ax, divisor     ;Mete ax com valor do divisor
+    mov [si] , ax       ;Mete a posicao 2 com o valor do divisor
+    add si, 2           ;Incrementa SI (+2 por ser 16 bits)
 
     jmp ConstrAuxArr
 
@@ -1299,37 +1300,296 @@ ConstrAuxArr:
       
 
 iniciarDivisao:
-    xor ax,ax
-    xor cx,cx
+    xor ax,ax                           ;Passa ax para 0
     
-    mov si, OFFSET dividendoarray       ;inicializar si como o array do dividendo
-    mov al, [si]                        ;passar o primeiro digito do array para ax
+    xor cx,cx                           ;Passa cx para 0
+    
+    mov si, OFFSET dividendoarray       ;Inicializar si como o array do dividendo
+    mov al, [si]                        ;Passar o primeiro digito do array para ax
     mov bl , tamanhoDividendo
-    mov tamanhoaux, bl    ;passar o tamanho do dividendo para o tamanho do array auxiliar         
-    xor bx,bx
-              
-    mov HO, al                         
-
+    mov tamanhoaux, bl                  ;Passar o tamanho do dividendo para o tamanho do array auxiliar         
     
-    jmp verificardivaux           ;Salta para o verificardivaux
+    xor bx,bx                           ;Passa bx para 0
+              
+    mov HO, ax                          ;Passa HO para o valor mais a esquerda do array
+    mov tamanhoHO, 1
+                            
+    mov CasaDoQuociente, 1              ;Contar o tamanho do Quociente
+    
+    jmp verificardivaux                 ;Salta para o verificardivaux
 
 verificardivaux:
-    cmp tamanhoaux , 0  ;Verifica se o dividendoAux esta vazio compara com "0"
+    cmp tamanhoaux , 0  ;Verifica se o dividendoAux esta vazio comparando com "0"
     je finalDiv         ;Caso esteja salta para o finalDiv
 
-    jmp proximaIteracao
+    jmp proximaIteracao ;Caso contrario, faz a proxima iteracao
 
 proximaIteracao:
-    
-    
+    xor ax,ax 
     mov si, OFFSET auxArr ;Verifica qual o maior valor do array auxArr menor que HO
-    call calcularMenorAux ;Guarda resultado em CX e o index em bl
+    call calcularMenorAux ;Guarda o resultado em CX e o index em bl
+    dec bl
     
-    cmp bl, 0
+    mov si, OFFSET dividendoarray ;Atribui a si o array auxiliarDoDividendo
     
+    cmp bl,0              ;Caso o index do numero seja 0
+    jne continuarCom0     ;Salta para continuarCom0 
+    
+    jmp continuarSem0     ;Caso contrario continua o processo da divisao
+
+continuarCom0:
+    xor ax,ax
+    mov al, CasaDoQuociente ;Copia para AX o valor guardado na variabel CasaDoQuociente
+    mul bl                  ;Multiplica o index pela portencia de 10 correspondente a casa do quociente 
+    add quociente, ax       ;Concatenar ao quociente o valor do bl
+    
+    mov ax, 10
+    mul CasaDoQuociente     ;Multiplica tamanhoQuociente por 10 (proxima casa)
+    mov CasaDoQuociente, al
+    
+    mov si, OFFSET dividendoarray ;Atribui a si o array auxiliarDoDividendo
+    mov counterAuxArr, 0    ;Prepara o contador para a proxima funcao
+    
+    jmp continuarSem0       ;Salta para a proxima funcao
+    
+continuarSem0:
+
+    cmp dh, tamanhoHO            ;Verifica se ja foram removidos todos os digitos correspondentes ao HO
+    je continuacaoDivisao        ;Se sim continua a divisao
+    
+    mov [si],0                   ;Passa para 0 o elemento nas posicoes do HO 
+    dec tamanhoaux               ;Decrementa tamanho do arrayAux
+    
+    inc si                       ;Incrementa si
+    inc dh                       ;Incrementa counterAuxArr
+    
+    jmp continuarSem0            ;Volta a rodar a funcao ate todos os elementos do array correspodentes a HO serem 0
+
+continuacaoDivisao:
+
+    sub HO,cx                    ;Subtrai do HO o valor guardado no cx (valor do arrayAuxiliar)
+    
+    
+    ;-------- COMECO PRIMEIRO IF --------
+    
+    cmp HO,0
+    jne HONotZeroSegundaParteIf
+    
+    jmp continuarNormal 
+        
+HONotZeroSegundaParteIf:
+
+    mov counterAuxArr, 0
+    mov si, OFFSET dividendoarray
+    
+    cmp cx,0
+    jne Primeiroif
+    
+    jmp continuarNormal 
+
+Primeiroif:               ;CONTEUDO DO PRIMEIRO IF
+
+     ;SUPOSTO FAZER:
+     ;adiciona os digitos de HO no inicio do array e
+     ;atribui-se a HO os dois valores mais a esquerda
+     ;do dividendoAux.
+     
+     mov ax, HO
+     mov auxHO, ax                  ;Passa para auxHO o valor de HO 
+     call atribuirDoisDigitosArray  ;Passar para o inicio do array o digitos de HO
+     
+     mov dl, counterAuxArr          ;Verificar se ja passou por todos os digitos de HO 
+     cmp dl, tamanhoHO 
+     jne Primeiroif                 ;Se nao, volta no ciclo
+     
+     mov counterAuxArr, 1           ;Passar o contador para 1 para auxiliar a proxima funcao 
+     mov si, OFFSET dividendoarray  ;Voltar a atribuir dividendoarray a si
+                     
+     mov HO,0                       ;Reseta o HO
+     mov ax, 1                      ;Atribui a ax 1 (para servir de auxiliar ao atribuir os 2 digitos)
+     call atribuirDoisDigitosHO     ;chamar a funcao atribuirDoisDigitosHO
+     
+     jmp continuarNormal            ;Continua apos ter concluido tudo
+
+
+atribuirDoisDigitosArray:
+    
+    mov ax, auxHO                   ;Move para ax o valor de auxHO
+    div potenciaAux                 ;Guarda em AX o digito proveniente
+     
+    mov [si], ax                    ;Substitui na posicao do array, o novo digito
+    mov auxHO, ax                   ;Passa para auxHO o novo valor
+    
+    mov ax, potenciaAux
+    mov dx, 10
+    div dx                          ;Passa para a novo potencia
+    mov potenciaAux, ax
+    
+    inc dl                          ;Incrementa dl
+    inc si                          ;Incrementa dl
+    inc tamanhoaux                          
+    
+    cmp dl,tamanhoauxHO             ;Verifica se ja precorreu todo o auxHO
+    jne inserirDigitosNoArray               
+    
+    ret
+
+atribuirDoisDigitosHO:
+    
+    mov dx, [si]                    ;Atribui a auxHO o elemento da posicao si 
+    mov auxHO, dx
+    mul auxHO                       ;Multiplica auxHO por ax (x1 para as unidades e x10 para as dezenas)
+    
+    add HO, ax                      ;Adiciona a HO o resultado da multiplicacao
+    
+    inc counterAuxArr
+    mov ax, 10                      ;Prepara ax para a proxima iteracao
+    
+    cmp counterAuxArr, 2            ;Verifica se todos os digitos ja foram adicionados a HO
+    jne atribuirDoisDigitosHO        ;Caso nao, faz mais uma iteracao
+    
+    ret                             ;Retorna caso ja tenha concluido
+
+;-------- COMECO SEGUNDO IF --------
     
 
-    jmp verificardivaux
+continuarNormal:
+    ;Segunda validacao
+    cmp cx,0
+    je CXZeroSegundaParteIf
+    
+    jmp continuarNormal1
+    
+CXZeroSegundaParteIf:
+    cmp tamanhoaux, 0
+    jne SegundoIf
+    
+    jmp continuarNormal1  
+
+SegundoIf:                  ;CONTEUDO DO SEGUNDO IF
+
+    ;SUPOSTO FAZER:
+    ;Armazenar o valor de HO em aux2, concatena-se a HO o
+    ;valor mais a esquerda de dividendoAux e atualizar
+    ;dividendoAux adicionando os digitos de HO no inicio
+    ;do array
+    
+    mov ax, HO
+    mov auxHO, ax                   ;Copia HO para auxHO
+    
+    mov al, tamanhoHO
+    mov tamanhoauxHO, al     ;Copia o tamanho de HO para tamanhoauxHO
+    
+    mov si, OFFSET dividendoarray   ;Atribui a si o dividendoarray
+    mov ax, 10                      
+    mul HO                          ;Multiplica HO por 10 (para concatenar)
+    dec si
+    call concatenarHO
+    
+    mov si, OFFSET dividendoarray   ;Atribui a si o dividendoarray
+    xor dx,dx                       ;Reseta dx para servir de contador para a proxima funcao
+    mov ax,1                          
+    call potencia                   ;Calcula a potencia base 10 para o tamanho do auxHO
+    xor dx,dx                       ;Reseta dx para servir de contador para a proxima funcao
+    mov dh,tamanhoauxHO             ;Prepara dh para a funcao inserirDigitosNoArray
+    call inserirDigitosNoArray      ;Chama a funcao inserirDigitosNoArray para inserir auxHO no array
+    
+    jmp continuarNormal1            ;Continua o processo
+
+concatenarHO:
+    inc si                          ;Incrementa si
+    
+
+    cmp [si],0                       ;Precorre o array até encontrar um numero que nao seja 0
+    je concatenarHO
+
+    add al, [si]                    ;Concatena o primeiro elemento do array a HO
+    mov HO, ax                      ;Passa para HO o novo valor concatenado
+    inc tamanhoHO                   ;Incrementa o tamanho do HO
+    
+    ret
+    
+inserirDigitosNoArray:
+    
+    mov ax, auxHO                   ;Move para ax o valor de auxHO
+    xor dx,dx
+    div potenciaAux                 ;Guarda em AX o digito proveniente
+     
+    mov [si], al                    ;Substitui na posicao do array, o novo digito
+    mov auxHO, ax                   ;Passa para auxHO o novo valor
+    
+    mov ax, potenciaAux
+    mov di, 10
+    div di                          ;Passa para a novo potencia
+    mov potenciaAux, ax
+    
+    inc cl                          ;Incrementa cl
+    inc si                          ;Incrementa sl
+    inc tamanhoaux
+    
+    cmp cl,tamanhoauxHO             ;Verifica se ja precorreu todo o auxHO
+    jne inserirDigitosNoArray               
+    
+    ret
+
+potencia:
+    
+    mov bx, 10
+    mul bx       ;Multiplica ax por 10
+    
+    cmp dh,dl
+    jne potencia 
+    
+    div bx
+    mov potenciaAux, ax
+    
+    ret    
+              
+                                 
+;-------- COMECO TERCEIRO IF --------
+
+
+continuarNormal1:
+    ;Terceira validacao
+    cmp HO,0
+    je HOZeroSegundaParteIf
+    
+    jmp continuarNormal2
+
+HOZeroSegundaParteIf:
+
+    mov si, OFFSET dividendoarray      ;Atribiu a si, dividendoarray
+    dec si                             ;Decrementa si para caso seja utilizado na funcao TerceiroIf
+    
+    cmp tamanhoaux, 0
+    jne TerceiroIf
+    
+    jmp continuarNormal2
+    
+TerceiroIf:                ;CONTEUDO DO TERCEIRO IF
+
+    ;SUPOSTO FAZER:
+    ;dar a HO o valor mais a
+    ;esquerda de dividendoAux.
+    
+    inc si             ;Incrementa si
+    
+    cmp [si] , 0
+    je TerceiroIf      ;Incrementa si ate ser diferente de 0
+    
+    mov dx, [si]
+    mov HO, dx         ;Passa o valor da primeia posicao que nao seja zero do dividendoarrayAux para o HO
+    mov tamanhoHO, 1
+    
+    jmp continuarNormal2   
+    
+
+;-------- FIM DOS IF'S --------
+
+
+continuarNormal2:
+
+    jmp verificardivaux    ;Passa para a proxima iteracao
 
 calcularMenorAux:
     
@@ -1341,17 +1601,17 @@ calcularMenorAux:
     mov bl,bh           ;Passa o valor de bh para bl (index anterior)
     inc bh              ;Incrementa o valor do array para ax
     
-    mov bl, HO          ;Passa HO para os lower bits do bx
-    cmp ax, bx          ;Compara ax com HO
-    jb calcularMenorAux ;Caso HO seja maior que ax(valor do array) passa para proximo elmento do array
+    mov dx, HO          ;Passa HO para bx
+    cmp ax, dx          ;Compara ax com HO
+    jna calcularMenorAux ;Caso HO seja maior que ax(valor do array) passa para proximo elmento do array
     
     ret                 ;Caso contrario volta para a funcao anterior com o numero do array em cx
 
 finalDiv:
-    mov ah, HO      ; Copia o valor do High Order para o resto
-    mov resto, ah  
+    mov ax, HO          ;Copia o valor do High Order para o resto
+    mov resto, ax  
 
-    xor cl, cl      ;Limpa o ecra
+    xor cl, cl          ;Limpa o ecra
 
     mov si,0
     lea si,dividendoarray 
@@ -1359,28 +1619,28 @@ finalDiv:
     mov AX, 03h
     int 10h 
     
-    lea dx, msgQuociente     ; Imprime a string msgQuociente
+    lea dx, msgQuociente    ;Imprime a string msgQuociente
     mov ah, 09h
     int 21h
     
-    xor ah, ah     ; Imprime o valor do quociente
-    mov al,quociente 
+    xor ah, ah              ;Imprime o valor do quociente
+    mov ax,quociente 
     Call print_num_uns
 
-    lea dx,enter        ; Faz um enter
+    lea dx,enter            ;Faz um enter
     mov ah,09h
     int 21h
     
-    lea dx, msgResto     ; Imprime a string msgResto
+    lea dx, msgResto        ;Imprime a string msgResto
     mov ah, 09h
     int 21h     
     
-    xor ah,ah            ; Imprime o valor do resto
-    mov al,resto 
+    xor ah,ah               ;Imprime o valor do resto
+    mov ax,resto 
     Call print_num_uns      
     
-    mov ah, 00h      ; Servio para receber um caractere do teclado
-    int 16h          ; Captura o caractere digitado
+    mov ah, 00h             ;Servio para receber um caractere do teclado
+    int 16h                 ;Captura o caractere digitado
     
     
     int 20h
@@ -2181,7 +2441,7 @@ NIFInvalido:
     lea dx, msgInvalido     ;imprime a string msgInvalido
     mov ah, 09h
     int 21h
-    mov ah,00h
+    mov ah,00h          
     int 16h
     jmp NIF
 
