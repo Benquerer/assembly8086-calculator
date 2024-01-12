@@ -41,6 +41,15 @@ msgErroSoma db "Digito invalido! Carregue qualquer tecla para sair... $"
 msgErroNegSoma db "Posicao do '-' invalida Carregue qualquer tecla para sair... $"
 
 
+;Multiplicacao
+askFator1 db "Escolha o primeiro Fator: $"
+askFator2 db "Escolha o segundo Fator: $"
+fatorArr1 db 10 dup (0)   
+fatorArr2 db 10 dup (0)
+tamanhoFator1 db 0  
+tamanhoFator2 db 0
+
+
 
 ; Divisao:
 msgtest db "TESTE: $"
@@ -84,10 +93,10 @@ lstResultadoRaiz dw 0
 tamanhoResultReal dw 0
                   
                         
-;CC  
+;CC 
+msgValido db "O numero que introduziu e valido. $" 
 askCC db "Introduza o CC : $" 
-msgInvalido db "O numero que introduziu nao e valido"
-msgValido db "O numero que introduziu e valido"
+msgInvalido db "O numero que introduziu nao e valido. $"
 CCArr db 12 dup (0)
 CCArrNovo db 12 dup (0)
 soma dw 0  
@@ -402,7 +411,147 @@ Subt:
     call clearScreen
 ;-------------------------------------------------------------------------------------------------------------------
 Mult:
+    
     call clearScreen
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    mov si, offset fatorArr1 
+    mov dx, offset askFator1 ; Carrega no dx o endereco da frase para pedir o dividendo  
+    mov ah, 09h     ; Funcao para imprimir string
+    int 21h         ; Chamar a interrupcao do DOS para imprimir 
+    
+    
+validarFator1:
+
+    ; Recebendo a entrada do usuario
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado
+
+    cmp al,13            ;Se encontra enter
+    je Fator2         ;Da je para continuar
+    cmp al,48            ;Se encontra 0
+    je check0na1pos1Mul     ;Da je para CHECK0na1pos1
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroMul           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroMul           ;Da jump para erro se for maior que 57
+    jmp lerFator1     ;Da jump para funcao lerNumerador
+                                                           
+                                                           
+lerFator1: 
+    sub al, 48
+    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
+    inc cl  ; incrementa o tamanho do Dividendo
+    mov tamanhoFator1, cl  ;atualiza o tamanho do dividendo
+    inc si  ; incrementa o pointer do array para selecionar as posicoes
+    jmp validarFator1  
+
+       
+       
+erroMul:
+    pusha          
+    mov ah, 0x00  
+    mov al, 0x03        ;text mode 80x25 16 colours
+    int 0x10
+    popa
+    
+    lea dx, msgErro     ;imprime a string msgErro
+    mov ah, 09h
+    int 21h 
+      
+    lea dx,enter        ;Faz um enter
+    mov ah,09h
+    int 21h
+    jmp Mult
+    
+    
+    
+check0na1pos1Mul:
+    cmp tamanhoFator1, 0   ;compara o tamanho do dividendo com 0
+    je erroMul                  ;se for igual a zero da erro
+    jmp lerFator1 
+    
+    
+Fator2:
+    call clearScreen
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    mov si, offset fatorArr2
+    mov dx, offset askFator2 ; Carrega no dx o endereco da frase para pedir o dividendo  
+    mov ah, 09h     ; Funcao para imprimir string
+    int 21h         ; Chamar a interrupcao do DOS para imprimir 
+    
+ 
+validarFator2:
+
+    ; Recebendo a entrada do usuario
+    mov ah, 01h      ; Servico para receber um caractere do teclado
+    int 21h          ; Captura o caractere digitado
+
+    cmp al,13            ;Se encontra enter
+    je multCalc         ;Da je para continuar
+    cmp al,48            ;Se encontra 0
+    je check0na1pos1Mul2     ;Da je para CHECK0na1pos1
+    cmp al,49            ;VERIFICA SE O VALOR INTRODUZIDO ESTA ENTRE 1 E 9 (49,57 em ASCII)
+    jb erroMul2           ;da jump para erro se for menor que 49
+    cmp al,57            
+    ja erroMul2           ;Da jump para erro se for maior que 57
+    jmp lerFator2     ;Da jump para funcao lerNumerador
+                                                           
+                                                           
+lerFator2: 
+    sub al, 48
+    mov [si],al ;armazena o numero recebido no numeradorarray na posicao si(por default comeca a 0)  
+    inc cl  ; incrementa o tamanho do Dividendo
+    mov tamanhoFator2, cl  ;atualiza o tamanho do dividendo
+    inc si  ; incrementa o pointer do array para selecionar as posicoes
+    jmp validarFator2 
+    
+    
+    
+erroMul2:
+    pusha          
+    mov ah, 0x00  
+    mov al, 0x03        ;text mode 80x25 16 colours
+    int 0x10
+    popa
+    
+    lea dx, msgErro     ;imprime a string msgErro
+    mov ah, 09h
+    int 21h 
+      
+    lea dx,enter        ;Faz um enter
+    mov ah,09h
+    int 21h
+    jmp Mult
+    
+    
+    
+check0na1pos1Mul2:
+    cmp tamanhoFator2, 0   ;compara o tamanho do dividendo com 0
+    je erroMul2                  ;se for igual a zero da erro
+    jmp lerFator2 
+    
+            
+            
+            
+multCalc:
+    
+    
+getMaior:
+    cmp tamanhoFator1, tamanhoFator2
+    ja maior1
+    je iguais
+    
+    
+maior1:
+
+
+iguais:
 ;-------------------------------------------------------------------------------------------------------------------              
 erroDiv:
     pusha          
@@ -733,6 +882,8 @@ raiz:
     mov tamanhoRaizInteiro, 0
     mov tamanhoRaizReal, 0
     
+    mov si, offset arrRaiz
+    
     mov dx, offset askRaiz
     mov ah, 9
     int 21h    
@@ -827,25 +978,25 @@ checkNumAlg:
     jmp resets2   
     
 resets:
-    xor si,si 
+    mov si, offset arrRaiz 
     xor ax,ax
+    mov cx,tamanhoRaizInteiro
        
 
-construirArrImpar:
-    xor cx,cx
-    mov cx,tamanhoRaizInteiro 
+construirArrImpar: 
     xor bx,bx
     mov bl,[si]
     xor bh,bh
     mov [si],al 
     mov ax,bx   
-    cmp si, cx
+    cmp cl, ch
     je resets2  
-    inc si
+    inc si 
+    inc ch
     jmp construirArrImpar
     
 resets2:
-    xor si,si
+    mov si, offset arrRaiz
     xor ax,ax
     xor bx,bx
     xor cx,cx
@@ -871,7 +1022,8 @@ raizCalculoInteiroP1:
     
     
     
-raizCalculoInteiroP2: 
+raizCalculoInteiroP2:
+    mov si, offset arrRaiz 
     mov dx, currentParNum
     mov ax, 2
     mul dx
@@ -897,7 +1049,7 @@ getParAlgInteiro:
     mov ax, currentParNum
     mov bx,2
     mul bx
-    mov si,ax
+    add si,ax
     mov al,[si]
     mov bx,10
     mul bx
@@ -1009,8 +1161,7 @@ endRaiz:
     xor bx,bx
     xor cx,cx
     xor dx,dx
-    xor si,si
-    xor di,di
+
     
     
        
@@ -1081,7 +1232,7 @@ converte_loop:
     
     
 back:
-    ret  
+    ret
 
 ;-------------------------------------------------------------------------------------------------------------------
 
@@ -1094,7 +1245,9 @@ cc:
     xor si,si
     xor di,di
     
-    mov tamanhoCC, 0
+    mov tamanhoCC, 0 
+    
+    mov si, offset CCArr
 
     mov dx, offset askCC
     mov ah, 9
@@ -1181,8 +1334,7 @@ maiorque10:
     
       
 teste:     
-    xor si, si
-    lea si, CCArr ;carrega o array
+    mov si, offset CCArr
     mov soma, 0
     xor cx,cx 
     xor dx,dx 
@@ -1190,10 +1342,10 @@ teste:
 
 checkDigit1: 
     xor ax,ax 
-    dec bl                 ;bl começa a 10 e e decrementado ate 2
-    mov si, cx             ;posiçao do array igual a do ch
+    dec bl                 ;bl começa a 10 e e decrementado ate 2            ;posiçao do array igual a do ch
     mov al, bl              ;move o bl para o ax para multiplicar
-    mov dl, [si]            ;move o algarismo na posiçao do si para o dl
+    mov dl, [si]
+    inc si            ;move o algarismo na posiçao do si para o dl
     mul dl                  ;multiplica ax por dl
     add soma, ax                    ;adiciona o resultado da mul com a soma
     inc cx                  ;ch começa a 0 ate 8
@@ -1251,8 +1403,9 @@ errado:
     jmp cc
 
 versao: 
-    mov cl, tamanhoCC     
-    mov si, cx  
+    mov cl, tamanhoCC
+    mov si, offset CCArr
+    add si, cx       
     cmp cx, 11
     je checkDigit2
     ; Recebendo a entrada do usuario
@@ -1347,18 +1500,26 @@ checkDigit2div:
 
 invalido:
     call clearScreen
-    lea dx, msgInvalido     ;imprime a string msgInvalido
-    mov ah, 09h
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx
+    mov dx, offset msgInvalido     ;imprime a string msgInvalido
+    mov ah, 9
     int 21h 
     mov ah, 01h      ; Servico para receber um caractere do teclado
     int 21h          ; Captura o caractere digitado 
     jmp cc
 
 
-CCFim:          
-    xor dx,dx
-    lea dx, msgValido     ;imprime a string msgValido   
-    mov ah, 09h
+CCFim:
+    call clearScreen 
+    xor ax,ax
+    xor bx,bx
+    xor cx,cx
+    xor dx,dx         
+    mov dx, offset msgValido     ;imprime a string msgValido   
+    mov ah, 9h
     int 21h    
     xor ax,ax
     mov ah, 01h      ; Servico para receber um caractere do teclado
@@ -1369,14 +1530,19 @@ CCFim:
 
 ;-------------------------------------------------------------------------------------------------------------------
 
-nif:       
+nif: 
+
+    call clearScreen
+          
     xor ax,ax
     xor bx,bx
     xor cx,cx
     xor dx,dx
     xor si,si
     xor di,di
-    call clearScreen
+    
+    mov si, offset NIFArr
+    
     mov dx, offset askNIF
     mov ah, 9
     int 21h
@@ -1437,21 +1603,20 @@ erroNIF:
           
           
 validarNIF:
-
-    mov dx,ax
-    mov ah,00h
-    int 16h
-    mov ax,dx 
+    
+    mov si, offset NIFArr 
     xor cx,cx 
     xor ax,ax
 
-    mov bx,9
+    mov bx,9  
+    
 validarNIF_new: 
-    mov si, cx
+
     mov ax, [si]
     xor ah,ah
     mul bx
     inc cx
+    inc si
     dec bx   
     add somaNIF, ax 
     
@@ -1460,6 +1625,7 @@ validarNIF_new:
     jmp validarNIF_new
 
 validarNIF2:
+
     xor dx,dx
     xor bx,bx
     mov bx, 11
@@ -1471,15 +1637,17 @@ validarNIF2:
 
 
 NIF0:
-    mov si, 8 
+    mov si, offset NIFArr
+    add si, 8 
     cmp [si], 0
     je NIFValido
     jmp NIFInvalido
 
-NIFdif0:   
+NIFdif0:
+    mov si, offset NIFArr   
     xor ax,ax
     mov ax,11
-    mov si,8
+    add si,8
     sub ax, dx
     mov dx, [si]   
     xor dh, dh
@@ -1488,6 +1656,7 @@ NIFdif0:
     jmp NIFInvalido
 
 NIFInvalido:
+    call clearScreen
     xor ax,ax
     xor dx,dx
     lea dx, msgInvalido     ;imprime a string msgInvalido
@@ -1498,6 +1667,7 @@ NIFInvalido:
     jmp NIF
 
 NIFValido:
+    call clearScreen
     xor ax,ax
     xor dx,dx
     lea dx, msgValido     ;imprime a string msgInvalido
