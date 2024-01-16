@@ -1,2 +1,11 @@
 # CalculadoraAssembly8086
-Calculadora feita em Assembly 80 86
+Calculator made using Assembly8086
+
+This calculator has:
+- Square root
+- division
+- multiplication
+- addition
+- subtraction
+- Portuguese NIF validation
+- Portuguese CC validation
